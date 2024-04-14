@@ -475,6 +475,18 @@ return
     }
 return
 
+*$c::
+    if (IsMouseShown()) {
+        Send, {Blind}c
+        return
+    }
+    Send, {Space}
+    Sleep, 1
+    Send, {Control down}
+    KeyWait, c
+    Send {Control up}
+return
+
 IniRead:
     IfNotExist, settings.ini
     {
