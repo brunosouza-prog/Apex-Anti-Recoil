@@ -339,13 +339,6 @@ DetectAndSetWeapon()
         if (CheckWeapon(VOLT_PIXELS)) {
             current_weapon_type := VOLT_WEAPON_TYPE
             current_pattern := VOLT_PATTERN
-        } else if (CheckWeapon(DEVOTION_PIXELS)) {
-            current_weapon_type := DEVOTION_WEAPON_TYPE
-            current_pattern := DEVOTION_PATTERN
-            if (CheckTurbocharger(DEVOTION_TURBOCHARGER_PIXELS)) {
-                current_pattern := TURBODEVOTION_PATTERN
-                current_weapon_type := DEVOTION_TURBO_WEAPON_TYPE
-            }
         } else if (CheckWeapon(HAVOC_PIXELS)) {
             current_weapon_type := HAVOC_WEAPON_TYPE
             current_pattern := HAVOC_PATTERN
@@ -364,7 +357,10 @@ DetectAndSetWeapon()
             current_pattern := LSTAR_PATTERN
         }
     } else if (check_point_color == SUPPY_DROP_COLOR) {
-        
+        if (CheckWeapon(DEVOTION_PIXELS)) {
+            current_pattern := TURBODEVOTION_PATTERN
+            current_weapon_type := DEVOTION_TURBO_WEAPON_TYPE
+        }
     } else if (check_point_color == SHOTGUN_WEAPON_COLOR) {
         current_weapon_type := SHOTGUN_WEAPON_TYPE
     } else if (check_point_color == SNIPER_WEAPON_COLOR) {
@@ -410,7 +406,7 @@ return
     }
 return
 
-~End::
+~$*End::
     ExitApp
 return
 
@@ -475,9 +471,9 @@ return
     }
 return
 
-*$c::
-    if (IsMouseShown()) {
-        Send, {Blind}c
+~$+c::
+    if (IsMouseShown() || !superglide) {
+        Send, {Blind}{c down}
         return
     }
     Send, {Space}
@@ -500,6 +496,7 @@ IniRead:
         IniWrite, "0"`n, settings.ini, mouse settings, ads_only
         IniWrite, "0", settings.ini, trigger settings, trigger_only
         IniWrite, "Capslock"`n, settings.ini, trigger settings, trigger_button
+        IniWrite, "0", settings.ini, other settings, superglide
         IniWrite, "0", settings.ini, other settings, debug
         Run "apexmaster.ahk"
     }
@@ -512,6 +509,7 @@ IniRead:
         IniRead, ads_only, settings.ini, mouse settings, ads_only
         IniRead, trigger_only, settings.ini, trigger settings, trigger_only
         IniRead, trigger_button, settings.ini, trigger settings, trigger_button
+        IniRead, superglide, settings.ini, other settings, superglide
         IniRead, debug, settings.ini, other settings, debug
     }
 return
@@ -564,7 +562,6 @@ Tooltip(Text)
     Tooltip, %Text%, xPos, yPos
 return
 }
-
 
 RunAsAdmin()
 {

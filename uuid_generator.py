@@ -18,6 +18,6 @@ if __name__ == '__main__':
     
     updateUUID('gui.ahk', new_uuid)
     updateUUID('apexmaster.ahk', new_uuid)
-    input("Done! Press enter to exit ;)") # to let people know the script is actually done...
+    input("Done, your new UUID is: " + new_uuid) # to let people know the script is actually done...
 
 
