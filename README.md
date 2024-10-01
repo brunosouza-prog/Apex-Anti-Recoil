@@ -5,6 +5,8 @@ An AutoHotKey script (works on multiple resolutions) to minimize recoil with aut
 
 This script was designed to run using KeySharp 0.0.0.7 (not AHK). Download it here: [KeySharp Download](https://bitbucket.org/mfeemster/keysharp/downloads/)
 
+## How to start the script
+
 To run this script, use the following command in your Windows terminal (make sure to run as admin):
 
 ```
@@ -17,7 +19,9 @@ For example:
 "C:\Program Files\Keysharp\Keysharp.exe" "C:\Users\yourusername\Downloads\Apex-Anti-Recoil\apexmaster.ahk"
 ```
 
-Thanks to Lew29 for the changes made from the original `mgsweet/Apex-NoRecoil-2021` fork that saved me heaps of time to get this together.
+### Note
+
+Alternatively you can run the `run_apexmaster.bat`, but first just make sure you go into the file and change to the correct PATH then you can make a shortcut to your Desktop then right click on the shortcut -> go to `Show more options` -> `Properties` -> `Shortcut` -> `Advanced` -> `Run as administrator` -> `Ok` -> `Ok`
 
 ## Note
 
@@ -70,3 +74,10 @@ Alternatively, you can generate a UUID from a website such as [UUID Tools](https
 - Bring back the rapid-fire feature and fix any issues with it
 - Fix Sheila
 - Add superglide macro (press and hold C with shift)
+
+## Special Thanks
+
+Thanks to Lew29 for the changes made from the original `mgsweet/Apex-NoRecoil-2021` fork that saved me heaps of time to get this together.
+Also thanks to mgsweet and all the original contibutors to the `mgsweet/Apex-NoRecoil-2021` fork that made this happen.
+
+Happy Days!
