@@ -30,7 +30,7 @@ global trigger_button := "Capslock"
 global show_tooltip := "0"
 global tempFilePath := A_ScriptDir "\debug_log.txt"
 global hMod, hHook
-global UUID := "05ca9afc92a1412ca2d872ddf6ebe497"
+global UUID := "811e155bf4114204ae515ff9174ec383"
 
 ; weapon type constant, mainly for debug
 global DEFAULT_WEAPON_TYPE := "DEFAULT"

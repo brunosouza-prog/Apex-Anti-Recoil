@@ -40,6 +40,15 @@ Before running the script, make sure to modify the `settings.ini` file to match 
 - `trigger_only`: Set to `1` if you want the script to only activate on trigger press, `0` for it to be always active.
 - `trigger_button`: The key that activates the script (e.g., `Capslock`).
 
+## Security Note
+
+To avoid your process being detected, run the Python script to generate a unique UUID using the following command:
+
+```
+python uuid_generator.py
+```
+
+Alternatively, you can generate a UUID from a website such as [UUID Tools](https://www.uuidtools.com/v4). Copy the generated UUID remove the extra `-` and paste it into the `apexmaster.ahk` and `gui.ahk` files where it says `global UUID :=`.
 
 ## My Changes
 
