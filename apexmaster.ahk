@@ -18,6 +18,7 @@ SendMode "Input"
 CoordMode "Pixel", "Screen"
 
 ; default variables
+global version := "1.0.0"
 global resolution := "1920x1080"
 global colorblind := "Normal"
 global sens := "5.0"
@@ -101,6 +102,13 @@ global CAR_PATTERN, FLATLINE_PATTERN, RAMPAGE_PATTERN, RAMPAGEAMP_PATTERN, PROWL
 global LSTAR_PATTERN, HEMLOK_PATTERN, HEMLOK_SINGLE_PATTERN, SHEILA_PATTERN
 global DEFAULT_PATTERN = ["0,0,0"]
 
+; Clear the debug log file at the start of the script
+if (FileExist(tempFilePath)) {
+    FileDelete(tempFilePath)
+}
+; Recreate an empty log file
+FileAppend("Script Version "version "`n", tempFilePath)
+
 ; First, read the settings from the ini file
 ReadIni()
 
@@ -176,26 +184,14 @@ RunAsAdmin() {
         LogMessage("Already running as Admin.")
         return 0
     }
+	
+	MsgBox("v"version " - Run the script as administrator.")
 
-    params := ""
-    Loop % 0 {
-        params .= " " A_Index
-    }
-
-    LogMessage("Calling ShellExecute to elevate privileges.")
-    result := DllCall("shell32.dll\ShellExecute", "UInt", 0, "Str", "RunAs", "Str", A_AhkPath, "Str", '"' . A_ScriptFullPath . '"', "Str", A_WorkingDir, "Int", 1)
-    
-    if result > 32 {
-        LogMessage("Elevation successful. Exiting the app.")
-    } else {
-        LogMessage("Failed to elevate. Error code: " result)
-    }
-
-    ExitApp
+    ExitSub()
 }
 
 ReadIni() {
-	global resolution, colorblind, zoom_sens, sens, auto_fire, ads_only, debug, trigger_only, trigger_button ; Make sure it's visible
+	global resolution, colorblind, zoom_sens, sens, auto_fire, ads_only, debug, trigger_only, trigger_button, version ; Make sure it's visible
     
 	iniFilePath := A_ScriptDir "\settings.ini" ; Ensure the full path is being checked
     
@@ -203,7 +199,7 @@ ReadIni() {
     
     if !FileExist(iniFilePath) {
         LogMessage("settings.ini not found. Creating a new one.")
-        MsgBox "Couldn't find settings.ini. I'll create one for you."
+        MsgBox("v"version " - Couldn't find settings.ini. I'll create one for you.")
         IniWrite("1920x1080", iniFilePath, "screen settings", "resolution")
         IniWrite("Normal", iniFilePath, "screen settings", "colorblind")
         IniWrite("5.0", iniFilePath, "mouse settings", "sens")
@@ -214,8 +210,12 @@ ReadIni() {
         IniWrite("0", iniFilePath, "trigger settings", "trigger_only")
         IniWrite("Capslock", iniFilePath, "trigger settings", "trigger_button")
         LogMessage("New settings.ini file created.")
+        MsgBox("v"version " - The settings.ini file was created, open it and make sure the settings match your in-game settings.")
+		ExitSub()
     } else {
+		debug := ReadIniValue(iniFilePath, "other settings", "debug")
         LogMessage("settings.ini found. Reading settings.")
+		LogMessage("debug=" debug)
 		resolution := ReadIniValue(iniFilePath, "screen settings", "resolution")
 		LogMessage("resolution=" resolution)
 		colorblind := ReadIniValue(iniFilePath, "screen settings", "colorblind")
@@ -228,8 +228,6 @@ ReadIni() {
 		LogMessage("auto_fire=" auto_fire)
 		ads_only := ReadIniValue(iniFilePath, "mouse settings", "ads_only")
 		LogMessage("ads_only=" ads_only)
-		debug := ReadIniValue(iniFilePath, "other settings", "debug")
-		LogMessage("debug=" debug)
 		trigger_only := ReadIniValue(iniFilePath, "trigger settings", "trigger_only")
 		LogMessage("trigger_only=" trigger_only)
 		trigger_button := ReadIniValue(iniFilePath, "trigger settings", "trigger_button")
@@ -354,8 +352,7 @@ LoadWeaponPatterns() {
 }
 
 HideProcess() {
-    global hMod
-    global hHook
+    global hMod, hHook, version ; Make sure it's visible
 
     LogMessage("Starting HideProcess...")
 
@@ -377,25 +374,26 @@ HideProcess() {
         ; If the hook was not set successfully, terminate the script
         if !hHook {
             LogMessage("[ERROR] SetWindowsHookEx failed. Exiting the script.")
-            MsgBox("[ERROR] SetWindowsHookEx failed!`nScript will now terminate!")
+            MsgBox("v"version " - [ERROR] SetWindowsHookEx failed!`nScript will now terminate!")
             ExitSub()
         } else {
             LogMessage("SetWindowsHookEx succeeded. Hook set.")
         }
     } else {
         LogMessage("[ERROR] LoadLibrary failed. Exiting the script.")
-        MsgBox("[ERROR] LoadLibrary failed!`nScript will now terminate!")
+        MsgBox("v"version " - [ERROR] LoadLibrary failed!`nScript will now terminate!")
         ExitSub()
     }
 
     ; If everything was successful, notify the user and log the process
     LogMessage("Process (" A_ScriptName ") hidden successfully.")
-    MsgBox "Process ('" A_ScriptName "') hidden! `nYour uuid is " UUID
+    MsgBox("v"version " - Process ('" A_ScriptName "') hidden! `nYour uuid is " UUID)
 }
 
 
 LoadPixel(name) {
-    global resolution
+    global resolution, version ; Make sure it's visible
+	
     iniFilePath := A_ScriptDir "\resolution\" resolution ".ini"
 	
     ; Log the start of the function
@@ -404,7 +402,7 @@ LoadPixel(name) {
     ; Check if the .ini file exists before reading
     if !FileExist(iniFilePath) {
         LogMessage("[ERROR] File not found: " iniFilePath)
-        MsgBox("[ERROR] File not found: " iniFilePath)
+        MsgBox("v"version " - [ERROR] File not found: " iniFilePath)
         ExitSub()
     }
 
@@ -492,6 +490,8 @@ ManualIniRead(iniFilePath, section, key) {
 }
 
 LoadPattern(filename) {
+	global version ; Make sure it's visible
+	
     filePath := A_ScriptDir "\pattern\" filename
     LogMessage("Loading pattern from file: " filePath)
 	
@@ -501,7 +501,7 @@ LoadPattern(filename) {
         LogMessage("File read successfully.")
     } catch {
         LogMessage("Error reading file: " filePath)
-        MsgBox("Error reading file: " filePath)
+        MsgBox("v"version " - Error reading file: " filePath)
         ExitSub()
     }
     
@@ -665,7 +665,7 @@ ShowToolTip(Text) {
 }
 
 ExitSub() {
-    global hHook, hMod
+    global hHook, hMod, version  ; Make sure it's visible
     
     LogMessage("Starting ExitSub...")
 
@@ -687,12 +687,12 @@ ExitSub() {
     
     ; Exit the application
     LogMessage("Exiting application.")
-    MsgBox("Exiting application!")
+    MsgBox("v"version " - Exiting application!")
     ExitApp
 }
 
 LogMessage(message) {
-	global debug, tempFilePath  ; Ensure they are accessible
+	global debug, tempFilePath, version  ; Ensure they are accessible
 	
     if (debug == "1") {
         try {
@@ -700,9 +700,9 @@ LogMessage(message) {
                 FileAppend("", tempFilePath)  ; Create it if not
             }
             ; Append the message to the log file
-            FileAppend(message "`n", tempFilePath)
+            FileAppend("v"version " - " message "`n", tempFilePath)
         } catch {
-            MsgBox("Error writing to log file")
+            MsgBox("v"version " - Error writing to log file")
         }
     }
 }
