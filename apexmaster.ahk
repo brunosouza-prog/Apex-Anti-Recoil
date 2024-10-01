@@ -1,28 +1,38 @@
-#NoEnv
+; environment settings
+#Requires AutoHotkey v2.0
 #MaxHotkeysPerInterval 99000000
 #HotkeyInterval 99000000
 #KeyHistory 0
 #SingleInstance force
 #MaxThreadsBuffer on
 #Persistent
-Process, Priority, , A
-SetBatchLines, -1
-ListLines Off
-SetWorkingDir %A_ScriptDir%
-SetKeyDelay, -1, -1
-SetMouseDelay, -1
-SetDefaultMouseSpeed, 0
-SetWinDelay, -1
-SetControlDelay, -1
-SendMode Input
+ProcessSetPriority "A"
+ListLines 0
+SetWorkingDir A_ScriptDir
+SetKeyDelay -1, -1
+SetMouseDelay -1
+SetDefaultMouseSpeed 0
+SetWinDelay -1
+SetControlDelay -1
+SendMode "Input"
+CoordMode "Pixel", "Screen"
 
+; default variables
+global resolution := "1920x1080"
+global colorblind := "Normal"
+global sens := "5.0"
+global zoom_sens := "1.0"
+global auto_fire := "1"
+global ads_only := "0"
+global debug := "0"
+global trigger_only := "0"
+global trigger_button := "Capslock"
+global show_tooltip := "0"
+global tempFilePath := A_ScriptDir "\debug_log.txt"
+global hMod, hHook
 global UUID := "05ca9afc92a1412ca2d872ddf6ebe497"
 
-RunAsAdmin()
-GoSub, IniRead
-HideProcess()
-
-; weapon type constant, mainly for debuging
+; weapon type constant, mainly for debug
 global DEFAULT_WEAPON_TYPE := "DEFAULT"
 global R99_WEAPON_TYPE := "R99"
 global R301_WEAPON_TYPE := "R301"
@@ -49,25 +59,55 @@ global CAR_WEAPON_TYPE := "CAR"
 global P3030_WEAPON_TYPE := "3030"
 global SHOTGUN_WEAPON_TYPE := "shotgun"
 global SNIPER_WEAPON_TYPE := "sniper"
-global SHEILA_WEAPON_TYPE := "shiela"
+global PEACEKEEPER_WEAPON_TYPE := "peacekeeper"
+global SELLA_WEAPON_TYPE := "sella"
 
 ; x, y pos for weapon1 and weapon 2
-global WEAPON_1_PIXELS := LoadPixel("weapon1")
-global WEAPON_2_PIXELS := LoadPixel("weapon2")
+global WEAPON_1_PIXELS, WEAPON_2_PIXELS
 
 ; weapon color
-global LIGHT_WEAPON_COLOR := 0x2D547D
-global HEAVY_WEAPON_COLOR := 0x596B38
-global ENERGY_WEAPON_COLOR := 0x286E5A
-global SUPPY_DROP_COLOR_NORMAL := 0x3701B2
-global SUPPY_DROP_COLOR_PROTANOPIA := 0x714AB2
-global SUPPY_DROP_COLOR_DEUTERANOPIA := 0x1920B2
-global SUPPY_DROP_COLOR_TRITANOPIA := 0x312E90
-global SHOTGUN_WEAPON_COLOR := 0x07206B
-global SNIPER_WEAPON_COLOR := 0x8F404B
-global SHEILA_WEAPON_COLOR := 0xA13CA1
+global LIGHT_WEAPON_COLOR := "0x7D542D" ;0x2D547D
+global HEAVY_WEAPON_COLOR := "0x386B59" ;0x596B38
+global ENERGY_WEAPON_COLOR := "0x5A6E28" ;0x286E5A
+global SUPPY_DROP_COLOR_NORMAL := "0xB20137" ;0x3701B2
+global SUPPY_DROP_COLOR_PROTANOPIA := "0xB24A71" ;0x714AB2
+global SUPPY_DROP_COLOR_DEUTERANOPIA := "0xB22019" ;0x1920B2
+global SUPPY_DROP_COLOR_TRITANOPIA := "0x902E31" ;0x312E90
 global SUPPY_DROP_COLOR := SUPPY_DROP_COLOR_NORMAL
+
 global colorblind
+
+global SHOTGUN_WEAPON_COLOR := "0x6B2007" ;0x07206B
+global SNIPER_WEAPON_COLOR := "0x4B408F" ;0x8F404B
+global SELLA_WEAPON_COLOR := "0xA13CA1" ;NO CHANGES
+
+; Declare global variables without loading the pixel data
+global R99_PIXELS, R301_PIXELS, P2020_PIXELS, RE45_PIXELS, G7_PIXELS, SPITFIRE_PIXELS
+global FLATLINE_PIXELS, PROWLER_PIXELS, RAMPAGE_PIXELS, P3030_PIXELS, CAR_PIXELS
+global DEVOTION_PIXELS, HAVOC_PIXELS, VOLT_PIXELS, NEMESIS_PIXELS, WINGMAN_PIXELS
+global HEMLOK_PIXELS, LSTAR_PIXELS, HAVOC_TURBOCHARGER_PIXELS, DEVOTION_TURBOCHARGER_PIXELS
+global NEMESIS_FULL_CHARGE_PIXELS, SINGLE_MODE_PIXELS, PEACEKEEPER_PIXELS
+
+; weapon detection
+global current_pattern := ["0,0,0"]
+global current_weapon_type := DEFAULT_WEAPON_TYPE
+global current_weapon_num := 0
+global peackkeeper_lock := false
+global is_single_mode := false
+
+; Declare global variables without loading the patterns
+global R301_PATTERN, R99_PATTERN, P2020_PATTERN, RE45_PATTERN, G7_PATTERN, SPITFIRE_PATTERN, ALTERNATOR_PATTERN
+global DEVOTION_PATTERN, TURBODEVOTION_PATTERN, HAVOC_PATTERN, VOLT_PATTERN, NEMESIS_PATTERN, NEMESIS_CHARGED_PATTERN
+global CAR_PATTERN, FLATLINE_PATTERN, RAMPAGE_PATTERN, RAMPAGEAMP_PATTERN, PROWLER_PATTERN, P3030_PATTERN
+global WINGMAN_PATTERN, LSTAR_PATTERN, HEMLOK_PATTERN, HEMLOK_SINGLE_PATTERN, SELLA_PATTERN
+
+; First, read the settings from the ini file
+ReadIni()
+
+; Make sure it run as admin
+RunAsAdmin()
+
+; Check if user is using colorblind mode and set the right color
 if (colorblind == "Protanopia") {
     SUPPY_DROP_COLOR := SUPPY_DROP_COLOR_PROTANOPIA
 } else if (colorblind == "Deuteranopia") {
@@ -76,543 +116,876 @@ if (colorblind == "Protanopia") {
     SUPPY_DROP_COLOR := SUPPY_DROP_COLOR_TRITANOPIA
 }
 
-; light weapon
-global R99_PIXELS := LoadPixel("r99")
-global ALTERNATOR_PIXELS := LoadPixel("alternator")
-global R301_PIXELS := LoadPixel("r301")
-global P2020_PIXELS := LoadPixel("p2020")
-global RE45_PIXELS := LoadPixel("re45")
-global G7_PIXELS := LoadPixel("g7")
-global SPITFIRE_PIXELS := LoadPixel("spitfire")
-; heavy weapon
-global FLATLINE_PIXELS := LoadPixel("flatline")
-global PROWLER_PIXELS := LoadPixel("prowler")
-global RAMPAGE_PIXELS := LoadPixel("rampage")
-global HEMLOK_PIXELS := LoadPixel("hemlok")
-global P3030_PIXELS := LoadPixel("p3030")
-; special
-global CAR_PIXELS := LoadPixel("car")
-; energy weapon
-global DEVOTION_PIXELS := LoadPixel("devotion")
-global DEVOTION_TURBOCHARGER_PIXELS := LoadPixel("devotion_turbocharger")
-global HAVOC_PIXELS := LoadPixel("havoc")
-global HAVOC_TURBOCHARGER_PIXELS := LoadPixel("havoc_turbocharger")
-global NEMESIS_PIXELS := LoadPixel("nemesis")
-global NEMESIS_FULL_CHARGE_PIXELS := LoadPixel("nemesis_full_charge")
-global VOLT_PIXELS := LoadPixel("volt")
-global LSTAR_PIXELS := LoadPixel("lstar")
-; sniper weapon
-global WINGMAN_PIXELS := LoadPixel("wingman")
-; single mode
-global SINGLE_MODE_PIXELS := LoadPixel("single_mode")
+; Load the weapon pixel data
+LoadWeaponPixels()
 
-; each player can hold 2 weapons
-LoadPixel(name) {
-    global resolution
-    IniRead, weapon_pixel_str, %A_ScriptDir%\resolution\%resolution%.ini, pixels, %name%
-    weapon_num_pixels := []
-    Loop, Parse, weapon_pixel_str, `,
-    {
-        if StrLen(A_LoopField) == 0 {
-            Continue
-        }
-        weapon_num_pixels.Insert(A_LoopField)
-    }
-    return weapon_num_pixels
-}
-
-; load pattern from file
-LoadPattern(filename) {
-    FileRead, pattern_str, %A_ScriptDir%\pattern\%filename%
-    pattern := []
-    Loop, Parse, pattern_str, `n, `, , `" ,`r 
-    {
-        if StrLen(A_LoopField) == 0 {
-            Continue
-        }
-        pattern.Insert(A_LoopField)
-    }
-    return pattern
-}
-
-; light weapon pattern
-global R301_PATTERN := LoadPattern("R301.txt")
-global R99_PATTERN := LoadPattern("R99.txt")
-global P2020_PATTERN := LoadPattern("P2020.txt")
-global RE45_PATTERN := LoadPattern("RE45.txt")
-global G7_Pattern := LoadPattern("G7.txt")
-global SPITFIRE_PATTERN := LoadPattern("Spitfire.txt")
-global ALTERNATOR_PATTERN := LoadPattern("Alternator.txt")
-; energy weapon pattern
-global DEVOTION_PATTERN := LoadPattern("Devotion.txt")
-global TURBODEVOTION_PATTERN := LoadPattern("DevotionTurbo.txt")
-global HAVOC_PATTERN := LoadPattern("Havoc.txt")
-global VOLT_PATTERN := LoadPattern("Volt.txt")
-global NEMESIS_PATTERN = LoadPattern("Nemesis.txt")
-global NEMESIS_CHARGED_PATTERN = LoadPattern("NemesisCharged.txt")
-; special
-global CAR_PATTERN := LoadPattern("CAR.txt")
-; heavy weapon pattern
-global FLATLINE_PATTERN := LoadPattern("Flatline.txt")
-global RAMPAGE_PATTERN := LoadPattern("Rampage.txt")
-global RAMPAGEAMP_PATTERN := LoadPattern("RampageAmp.txt")
-global PROWLER_PATTERN := LoadPattern("Prowler.txt")
-global P3030_PATTERN := LoadPattern("3030.txt")
-; sinper weapon pattern
-global WINGMAN_PATTERN := LoadPattern("Wingman.txt")
-; supply drop weapon pattern
-global LSTAR_PATTERN := LoadPattern("Lstar.txt")
-global HEMLOK_PATTERN := LoadPattern("Hemlok.txt")
-global HEMLOK_SINGLE_PATTERN := LoadPattern("HemlokSingle.txt")
-; sheila
-global SHEILA_PATTERN := LoadPattern("Sheila.txt")
-
-; voice setting
-SAPI:=ComObjCreate("SAPI.SpVoice")
-SAPI.rate:=7
-SAPI.volume:=80
-
-; weapon detection
-global current_pattern := ["0,0,0"]
-global current_weapon_type := DEFAULT_WEAPON_TYPE
-global current_weapon_num := 0
-global is_single_mode := false
-
-; mouse sensitivity setting
+; Set the mouse sensitivity setting now that the ini was loaded
 zoom := 1.0/zoom_sens
 global modifier := 4/sens*zoom
 
-; check whether the current weapon match the weapon pixels
-CheckWeapon(weapon_pixels)
-{
-    target_color := 0xFFFFFF
-    i := 1
-    loop, 3 {
-        PixelGetColor, check_point_color, weapon_pixels[i], weapon_pixels[i + 1]
-        if (weapon_pixels[i + 2] != (check_point_color == target_color)) {
-            return False
-        }
-        i := i + 3
-    }
-    return True
-}
+; Load the weapon patterns
+LoadWeaponPatterns()
 
-CheckTurbocharger(turbocharger_pixels)
-{
-    target_color := 0xFFFFFF
-    PixelGetColor, check_point_color, turbocharger_pixels[1], turbocharger_pixels[2]
-    if (check_point_color == target_color) {
-        return true
-    }
-    return false
-}
-
-IsNemesisFullCharge()
-{
-    target_color := 0xD6BD62
-    PixelGetColor, check_point_color, NEMESIS_FULL_CHARGE_PIXELS[1], NEMESIS_FULL_CHARGE_PIXELS[2]
-    if (check_point_color == target_color) {
-        return true
-    }
-    return false
-}
-
-CheckSingleMode()
-{
-    target_color := 0xFFFFFF
-    PixelGetColor, check_point_color, SINGLE_MODE_PIXELS[1], SINGLE_MODE_PIXELS[2]
-    if (check_point_color == target_color) {
-        return true
-    }
-    return false
-}
-
-Reset()
-{
-    is_single_mode := false
-    current_weapon_type := DEFAULT_WEAPON_TYPE
-    check_point_color := 0
-    current_weapon_num := 0
-}
-
-IsShiela()
-{
-    PixelGetColor, check_weapon2_color, WEAPON_2_PIXELS[1], WEAPON_2_PIXELS[2]
-    return check_weapon2_color == SHEILA_WEAPON_COLOR
-}
-
-SetShiela()
-{
-    current_weapon_type := SHEILA_WEAPON_TYPE
-    current_pattern := SHEILA_PATTERN
-    global debug
-    if (debug) {
-        Say(current_weapon_type)
-    }
-}
-
-IsValidWeaponColor(weapon_color)
-{
-    return weapon_color == LIGHT_WEAPON_COLOR || weapon_color == HEAVY_WEAPON_COLOR || weapon_color == SNIPER_WEAPON_COLOR 
-    || weapon_color == ENERGY_WEAPON_COLOR || weapon_color == SUPPY_DROP_COLOR || weapon_color == SHOTGUN_WEAPON_COLOR
-}
-
-DetectAndSetWeapon()
-{
-    Reset()
-    
-    if IsShiela() {
-        SetShiela()
-        return
-    }
-
-    is_single_mode := CheckSingleMode()
-
-    ; first check which weapon is activate
-    PixelGetColor, weapon1_color, WEAPON_1_PIXELS[1], WEAPON_1_PIXELS[2]
-    PixelGetColor, weapon2_color, WEAPON_2_PIXELS[1], WEAPON_2_PIXELS[2]
-    if (IsValidWeaponColor(weapon1_color)) {
-        check_point_color := weapon1_color
-        current_weapon_num := 1
-    } else if (IsValidWeaponColor(weapon2_color)) {
-        check_point_color := weapon2_color
-        current_weapon_num := 2
-    } else {
-        return
-    }
-
-    ; then check the weapon type
-    if (check_point_color == LIGHT_WEAPON_COLOR) {
-        if (CheckWeapon(R301_PIXELS)) {
-            current_weapon_type := R301_WEAPON_TYPE
-            current_pattern := R301_PATTERN
-        } else if (CheckWeapon(R99_PIXELS)) {
-            current_weapon_type := R99_WEAPON_TYPE
-            current_pattern := R99_PATTERN
-        } else if (CheckWeapon(P2020_PIXELS)) {
-            current_weapon_type := P2020_WEAPON_TYPE
-            current_pattern := P2020_PATTERN
-        } else if (CheckWeapon(RE45_PIXELS)) {
-            current_weapon_type := RE45_WEAPON_TYPE
-            current_pattern := RE45_PATTERN
-        } else if (CheckWeapon(ALTERNATOR_PIXELS)) {
-            current_weapon_type := ALTERNATOR_WEAPON_TYPE
-            current_pattern := ALTERNATOR_PATTERN
-        } else if (CheckWeapon(CAR_PIXELS)) { 
-            current_weapon_type := CAR_WEAPON_TYPE 
-            current_pattern := CAR_PATTERN 
-        } else if (CheckWeapon(G7_PIXELS)) {
-            current_weapon_type := G7_WEAPON_TYPE
-            current_pattern := G7_Pattern
-        } else if (CheckWeapon(SPITFIRE_PIXELS)) {
-            current_weapon_type := SPITFIRE_WEAPON_TYPE
-            current_pattern := SPITFIRE_PATTERN 
-        } else if (CheckWeapon(RE45_PIXELS)) {
-            current_weapon_type := RE45_WEAPON_TYPE
-            current_pattern := RE45_PATTERN
-        }
-    } else if (check_point_color == HEAVY_WEAPON_COLOR) {
-        if (CheckWeapon(FLATLINE_PIXELS)) {
-            current_weapon_type := FLATLINE_WEAPON_TYPE
-            current_pattern := FLATLINE_PATTERN
-        } else if (CheckWeapon(PROWLER_PIXELS)) {
-            current_weapon_type := PROWLER_WEAPON_TYPE
-            current_pattern := PROWLER_PATTERN
-        } else if (CheckWeapon(RAMPAGE_PIXELS)) {
-            current_weapon_type := RAMPAGE_WEAPON_TYPE
-            current_pattern := RAMPAGE_PATTERN
-        } else if (CheckWeapon(CAR_PIXELS)) { 
-            current_weapon_type := CAR_WEAPON_TYPE 
-            current_pattern := CAR_PATTERN 
-        } else if (CheckWeapon(P3030_PIXELS)) {
-            current_weapon_type := P3030_WEAPON_TYPE 
-            current_pattern := P3030_PATTERN
-        } else if (CheckWeapon(HEMLOK_PIXELS)) {
-            current_weapon_type := HEMLOK_WEAPON_TYPE
-            current_pattern := HEMLOK_PATTERN
-            if (is_single_mode) {
-                current_weapon_type := HEMLOK_SINGLE_WEAPON_TYPE
-                current_pattern := HEMLOK_SINGLE_PATTERN
-            }
-        }
-    } else if (check_point_color == ENERGY_WEAPON_COLOR) {
-        if (CheckWeapon(VOLT_PIXELS)) {
-            current_weapon_type := VOLT_WEAPON_TYPE
-            current_pattern := VOLT_PATTERN
-        } else if (CheckWeapon(HAVOC_PIXELS)) {
-            current_weapon_type := HAVOC_WEAPON_TYPE
-            current_pattern := HAVOC_PATTERN
-            if (CheckTurbocharger(HAVOC_TURBOCHARGER_PIXELS)) {
-                current_weapon_type := HAVOC_TURBO_WEAPON_TYPE
-            }
-        } else if (CheckWeapon(NEMESIS_PIXELS)) {
-            current_weapon_type := NEMESIS_WEAPON_TYPE
-            current_pattern := NEMESIS_PATTERN
-            if (IsNemesisFullCharge()) {
-                current_weapon_type := NEMESIS_CHARGED_WEAPON_TYPE
-                current_pattern := NEMESIS_CHARGED_PATTERN
-            }
-        } else if (CheckWeapon(LSTAR_PIXELS)) {
-            current_weapon_type := LSTAR_WEAPON_TYPE
-            current_pattern := LSTAR_PATTERN
-        }
-    } else if (check_point_color == SUPPY_DROP_COLOR) {
-        if (CheckWeapon(DEVOTION_PIXELS)) {
-            current_pattern := TURBODEVOTION_PATTERN
-            current_weapon_type := DEVOTION_TURBO_WEAPON_TYPE
-        }
-    } else if (check_point_color == SHOTGUN_WEAPON_COLOR) {
-        current_weapon_type := SHOTGUN_WEAPON_TYPE
-    } else if (check_point_color == SNIPER_WEAPON_COLOR) {
-        current_weapon_type := SNIPER_WEAPON_TYPE
-    }
-
-    global debug
-    if (debug) {
-        Say(current_weapon_type)
-    }
-}
-
-IsAutoClickNeeded() 
-{
-    global auto_fire
-    return auto_fire && (current_weapon_type == P2020_WEAPON_TYPE || current_weapon_type == HEMLOK_SINGLE_WEAPON_TYPE)
-}
+; Now hide the process
+HideProcess()
 
 ~$*E Up::
-~$*B::
-    Sleep, 300
+    Sleep(300)
     DetectAndSetWeapon()
 return
 
+~$*WheelDown::
 ~$*1::
 ~$*2::
+~$*B::
 ~$*R::
-    Sleep, 100
+    Sleep(500)
     DetectAndSetWeapon()
 return
 
 ~$*3::
+    Reset()
+return
+
 ~$*G Up::
     Reset()
 return
 
 ~$*Z::
-    Sleep, 400  
-    if IsShiela() {
-        SetShiela()
+    Sleep(600)  
+    if IsSella() {
+        SetSella()
     } else {
         Reset()
     }
 return
 
-~$*End::
-    ExitApp
+~End::
+	ExitSub()
 return
 
 ~$*LButton::
-    if (IsMouseShown() || current_weapon_type == DEFAULT_WEAPON_TYPE || current_weapon_type == SHOTGUN_WEAPON_TYPE || current_weapon_type == SNIPER_WEAPON_TYPE)
-        return
+{
+	MoveMouse()
+}
 
-    if (is_single_mode && !(IsAutoClickNeeded()))
-        return
+RunAsAdmin() {
+    LogMessage("RunAsAdmin called.")
+    
+    if A_IsAdmin {
+        LogMessage("Already running as Admin.")
+        return 0
+    }
 
-    if (ads_only && !GetKeyState("RButton"))
-        return
+    params := ""
+    Loop % 0 {
+        params .= " " A_Index
+    }
 
-    if (trigger_only && !GetKeyState(trigger_button,"T"))
-        return
+    LogMessage("Calling ShellExecute to elevate privileges.")
+    result := DllCall("shell32.dll\ShellExecute", "UInt", 0, "Str", "RunAs", "Str", A_AhkPath, "Str", '"' . A_ScriptFullPath . '"', "Str", A_WorkingDir, "Int", 1)
+    
+    if result > 32 {
+        LogMessage("Elevation successful. Exiting the app.")
+    } else {
+        LogMessage("Failed to elevate. Error code: " result)
+    }
 
-    if (current_weapon_type == HAVOC_WEAPON_TYPE) {
-        Sleep, 400
+    ExitApp
+}
+
+ReadIni() {
+	global resolution, colorblind, zoom_sens, sens, auto_fire, ads_only, debug, trigger_only, trigger_button ; Make sure it's visible
+    
+	iniFilePath := A_ScriptDir "\settings.ini" ; Ensure the full path is being checked
+    
+    LogMessage("Checking if settings.ini exists at: " iniFilePath)
+    
+    if !FileExist(iniFilePath) {
+        LogMessage("settings.ini not found. Creating a new one.")
+        MsgBox "Couldn't find settings.ini. I'll create one for you."
+        IniWrite("1920x1080", iniFilePath, "screen settings", "resolution")
+        IniWrite("Normal", iniFilePath, "screen settings", "colorblind")
+        IniWrite("5.0", iniFilePath, "mouse settings", "sens")
+        IniWrite("1.0", iniFilePath, "mouse settings", "zoom_sens")
+        IniWrite("1", iniFilePath, "mouse settings", "auto_fire")
+        IniWrite("0", iniFilePath, "mouse settings", "ads_only")
+        IniWrite("0", iniFilePath, "other settings", "debug")
+        IniWrite("0", iniFilePath, "trigger settings", "trigger_only")
+        IniWrite("Capslock", iniFilePath, "trigger settings", "trigger_button")
+        LogMessage("New settings.ini file created.")
+    } else {
+        LogMessage("settings.ini found. Reading settings.")
+		resolution := ReadIniValue(iniFilePath, "screen settings", "resolution")
+		LogMessage("resolution=" resolution)
+		colorblind := ReadIniValue(iniFilePath, "screen settings", "colorblind")
+		LogMessage("colorblind=" colorblind)
+		zoom_sens := ReadIniValue(iniFilePath, "mouse settings", "zoom_sens")
+		LogMessage("zoom_sens=" zoom_sens)
+		sens := ReadIniValue(iniFilePath, "mouse settings", "sens")
+		LogMessage("sens=" sens)
+		auto_fire := ReadIniValue(iniFilePath, "mouse settings", "auto_fire")
+		LogMessage("auto_fire=" auto_fire)
+		ads_only := ReadIniValue(iniFilePath, "mouse settings", "ads_only")
+		LogMessage("ads_only=" ads_only)
+		debug := ReadIniValue(iniFilePath, "other settings", "debug")
+		LogMessage("debug=" debug)
+		trigger_only := ReadIniValue(iniFilePath, "trigger settings", "trigger_only")
+		LogMessage("trigger_only=" trigger_only)
+		trigger_button := ReadIniValue(iniFilePath, "trigger settings", "trigger_button")
+		LogMessage("trigger_button=" trigger_button)
+    }
+}
+
+; Helper function to read INI values with fallback and logging
+ReadIniValue(iniFilePath, section, key) {
+    try {
+        value := IniRead(iniFilePath, section, key)
+        LogMessage("IniRead success for " key ": " value)
+    } catch {
+        LogMessage("IniRead failed for " key ". Attempting manual file read.")
+        value := ManualIniRead(iniFilePath, section, key)
+        if value != ""
+            LogMessage("Manual read success for " key ": " value)
+        else
+            LogMessage("Manual read failed for " key)
+    }
+	
+    return value.ToString()
+}
+
+LoadWeaponPixels() {
+	; Make sure the variables are visible in this function
+	global R99_PIXELS, R301_PIXELS, P2020_PIXELS, RE45_PIXELS, G7_PIXELS, SPITFIRE_PIXELS
+	global FLATLINE_PIXELS, PROWLER_PIXELS, RAMPAGE_PIXELS, P3030_PIXELS, CAR_PIXELS
+	global DEVOTION_PIXELS, HAVOC_PIXELS, VOLT_PIXELS, NEMESIS_PIXELS, WINGMAN_PIXELS
+	global HEMLOK_PIXELS, LSTAR_PIXELS, HAVOC_TURBOCHARGER_PIXELS, DEVOTION_TURBOCHARGER_PIXELS
+	global NEMESIS_FULL_CHARGE_PIXELS, SINGLE_MODE_PIXELS, PEACEKEEPER_PIXELS
+	global WEAPON_1_PIXELS, WEAPON_2_PIXELS
+    LogMessage("Loading weapon pixels...")
+	
+	; x, y pos for weapon1 and weapon 2
+	WEAPON_1_PIXELS := LoadPixel("weapon1")
+	WEAPON_2_PIXELS := LoadPixel("weapon2")
+
+    ; Load light weapon pixels
+    R99_PIXELS := LoadPixel("r99")
+    R301_PIXELS := LoadPixel("r301")
+    P2020_PIXELS := LoadPixel("p2020")
+    RE45_PIXELS := LoadPixel("re45")
+    G7_PIXELS := LoadPixel("g7")
+    SPITFIRE_PIXELS := LoadPixel("spitfire")
+
+    ; Load heavy weapon pixels
+    FLATLINE_PIXELS := LoadPixel("flatline")
+    PROWLER_PIXELS := LoadPixel("prowler")
+    RAMPAGE_PIXELS := LoadPixel("rampage")
+    P3030_PIXELS := LoadPixel("p3030")
+
+    ; Load special weapon pixels
+    CAR_PIXELS := LoadPixel("car")
+
+    ; Load energy weapon pixels
+    DEVOTION_PIXELS := LoadPixel("devotion")
+    HAVOC_PIXELS := LoadPixel("havoc")
+    VOLT_PIXELS := LoadPixel("volt")
+    NEMESIS_PIXELS := LoadPixel("nemesis")
+
+    ; Load sniper weapon pixels
+    WINGMAN_PIXELS := LoadPixel("wingman")
+
+    ; Load supply drop weapon pixels
+    HEMLOK_PIXELS := LoadPixel("hemlok")
+    LSTAR_PIXELS := LoadPixel("lstar")
+
+    ; Load turbocharger pixels
+    HAVOC_TURBOCHARGER_PIXELS := LoadPixel("havoc_turbocharger")
+    DEVOTION_TURBOCHARGER_PIXELS := LoadPixel("devotion_turbocharger")
+
+    ; Load Nemesis full charge and single mode pixels
+    NEMESIS_FULL_CHARGE_PIXELS := LoadPixel("nemesis_full_charge")
+    SINGLE_MODE_PIXELS := LoadPixel("single_mode")
+
+    ; Load shotgun pixels
+    PEACEKEEPER_PIXELS := LoadPixel("peacekeeper")
+
+    LogMessage("Weapon pixels loaded successfully.")
+}
+
+LoadWeaponPatterns() {
+	; Make sure the variables are visible in this function
+	global R301_PATTERN, R99_PATTERN, P2020_PATTERN, RE45_PATTERN, G7_PATTERN, SPITFIRE_PATTERN, ALTERNATOR_PATTERN
+	global DEVOTION_PATTERN, TURBODEVOTION_PATTERN, HAVOC_PATTERN, VOLT_PATTERN, NEMESIS_PATTERN, NEMESIS_CHARGED_PATTERN
+	global CAR_PATTERN, FLATLINE_PATTERN, RAMPAGE_PATTERN, RAMPAGEAMP_PATTERN, PROWLER_PATTERN, P3030_PATTERN
+	global WINGMAN_PATTERN, LSTAR_PATTERN, HEMLOK_PATTERN, HEMLOK_SINGLE_PATTERN, SELLA_PATTERN
+	
+    LogMessage("Loading weapon patterns...")
+
+    ; Load light weapon patterns
+    R301_PATTERN := LoadPattern("R301.txt")
+    R99_PATTERN := LoadPattern("R99.txt")
+    P2020_PATTERN := LoadPattern("P2020.txt")
+    RE45_PATTERN := LoadPattern("RE45.txt")
+    G7_PATTERN := LoadPattern("G7.txt")
+    SPITFIRE_PATTERN := LoadPattern("Spitfire.txt")
+    ALTERNATOR_PATTERN := LoadPattern("Alternator.txt")
+
+    ; Load energy weapon patterns
+    DEVOTION_PATTERN := LoadPattern("Devotion.txt")
+    TURBODEVOTION_PATTERN := LoadPattern("DevotionTurbo.txt")
+    HAVOC_PATTERN := LoadPattern("Havoc.txt")
+    VOLT_PATTERN := LoadPattern("Volt.txt")
+    NEMESIS_PATTERN := LoadPattern("Nemesis.txt")
+    NEMESIS_CHARGED_PATTERN := LoadPattern("NemesisCharged.txt")
+
+    ; Load special weapon patterns
+    CAR_PATTERN := LoadPattern("CAR.txt")
+
+    ; Load heavy weapon patterns
+    FLATLINE_PATTERN := LoadPattern("Flatline.txt")
+    RAMPAGE_PATTERN := LoadPattern("Rampage.txt")
+    RAMPAGEAMP_PATTERN := LoadPattern("RampageAmp.txt")
+    PROWLER_PATTERN := LoadPattern("Prowler.txt")
+    P3030_PATTERN := LoadPattern("3030.txt")
+
+    ; Load sniper weapon patterns
+    WINGMAN_PATTERN := LoadPattern("Wingman.txt")
+
+    ; Load supply drop weapon patterns
+    LSTAR_PATTERN := LoadPattern("Lstar.txt")
+    HEMLOK_PATTERN := LoadPattern("Hemlok.txt")
+    HEMLOK_SINGLE_PATTERN := LoadPattern("HemlokSingle.txt")
+
+    ; Load sella weapon pattern
+    SELLA_PATTERN := LoadPattern("Sella.txt")
+
+    LogMessage("Weapon patterns loaded successfully.")
+}
+
+HideProcess() {
+    global hMod
+    global hHook
+
+    LogMessage("Starting HideProcess...")
+
+    ; Check if the OS is 64-bit and if pointer size is correct
+    if (A_Is64bitOS and A_PtrSize != 4) {
+        hMod := DllCall("LoadLibrary", "Str", "hyde64.dll", "Ptr")
+        LogMessage("Attempting to load hyde64.dll")
+    } else {
+        hMod := DllCall("LoadLibrary", "Str", "hyde.dll", "Ptr")
+        LogMessage("Attempting to load hyde.dll")
+    }
+
+    ; If the library is loaded successfully
+    if hMod {
+        LogMessage("Library loaded successfully.")
+        
+        hHook := DllCall("SetWindowsHookEx", "Int", 5, "Ptr", DllCall("GetProcAddress", "Ptr", hMod, "AStr", "CBProc", "Ptr"), "Ptr", hMod, "Ptr", 0, "Ptr")
+
+        ; If the hook was not set successfully, terminate the script
+        if !hHook {
+            LogMessage("SetWindowsHookEx failed. Exiting the script.")
+            MsgBox("SetWindowsHookEx failed!`nScript will now terminate!")
+            ExitSub()
+        } else {
+            LogMessage("SetWindowsHookEx succeeded. Hook set.")
+        }
+    } else {
+        LogMessage("LoadLibrary failed. Exiting the script.")
+        MsgBox("LoadLibrary failed!`nScript will now terminate!")
+        ExitSub()
+    }
+
+    ; If everything was successful, notify the user and log the process
+    LogMessage("Process (" A_ScriptName ") hidden successfully.")
+    MsgBox "Process ('" A_ScriptName "') hidden! `nYour uuid is " UUID
+}
+
+
+LoadPixel(name) {
+    global resolution
+    iniFilePath := A_ScriptDir "\resolution\" resolution ".ini"
+	
+    ; Log the start of the function
+    LogMessage("Starting LoadPixel for weapon: " name)
+
+    ; Check if the .ini file exists before reading
+    if !FileExist(iniFilePath) {
+        LogMessage("File not found: " iniFilePath)
+        MsgBox("File not found: " iniFilePath)
+        ExitSub()
+    }
+
+    LogMessage("Found iniFilePath: " iniFilePath)
+	
+    ; Use IniRead if available, otherwise fallback to manual file reading
+    try {
+        weapon_pixel_str := IniRead(iniFilePath, "pixels", name)
+        LogMessage("IniRead success for " name)
+    } catch {
+        LogMessage("IniRead failed for " name ". Attempting manual file read.")
+        weapon_pixel_str := ManualIniRead(iniFilePath, "pixels", name)
     }
     
-    if (current_weapon_type == NEMESIS_WEAPON_TYPE || current_weapon_type == NEMESIS_CHARGED_WEAPON_TYPE)
-    {
-        if (IsNemesisFullCharge()) {
-            current_weapon_type := NEMESIS_CHARGED_WEAPON_TYPE
-            current_pattern := NEMESIS_CHARGED_PATTERN
-        } else {
-            current_weapon_type := NEMESIS_WEAPON_TYPE
-            current_pattern := NEMESIS_PATTERN
+    ; Log the read pixel data
+    LogMessage("weapon_pixel_str: " weapon_pixel_str)
+    
+    ; Create an empty array to store pixel data
+    weapon_num_pixels := []
+    
+    ; Use 'StrSplit' to split the string into an array by commas
+    if (weapon_pixel_str) {
+        pixelArray := StrSplit(weapon_pixel_str, ",")
+        
+        ; Log the split array
+        LogMessage("pixelArray: " pixelArray)
+        
+        ; Iterate through the array and push non-empty entries into 'weapon_num_pixels'
+        for pixel in pixelArray {
+            if (StrLen(pixel) > 0) {
+                cleanedPixel := Trim(StrReplace(pixel, '"'))  ; Remove extra quotes and spaces
+                LogMessage("Processing pixel: " cleanedPixel)
+                weapon_num_pixels.Push(Round(cleanedPixel))  ; Ensure it's an integer
+            }
+        }
+    } else {
+        LogMessage("No pixel data found for " name)
+    }
+
+    ; Log the final pixel array
+    LogMessage("weapon_num_pixels for " name ": " weapon_num_pixels)
+
+    return weapon_num_pixels
+}
+
+ManualIniRead(iniFilePath, section, key) {
+    ; Log the start of the function
+    LogMessage("Starting ManualIniRead. File: " iniFilePath ", Section: " section ", Key: " key)
+    
+    content := FileRead(iniFilePath) ; Read the entire file
+    
+    ; Log if the content is read
+    if content {
+        LogMessage("File content successfully read.")
+    } else {
+        LogMessage("Failed to read file content.")
+        return ""
+    }
+
+    section_found := false
+    for line in StrSplit(content, "`n") {
+        line := Trim(line)
+        
+        ; Log the current line being processed
+        LogMessage("Processing line: " line)
+
+        ; Check for the section header
+        if (line = "[" section "]") {
+            section_found := true
+            LogMessage("Section found: [" section "]")
+            continue
+        }
+
+        ; Read the key if we're inside the section
+        if (section_found and InStr(line, key "=")) {
+            value := Trim(StrSplit(line, "=")[2])
+            LogMessage("Key found: " key " with value: " value)
+            return value
         }
     }
 
+    ; Log if the section or key was not found
+    LogMessage("Section [" section "] or key " key " not found in the file.")
+    return ""
+}
+
+LoadPattern(filename) {
+    filePath := A_ScriptDir "\pattern\" filename
+    LogMessage("Loading pattern from file: " filePath)
+	
+    ; Read the file and get its contents directly
+    try {
+        pattern_str := FileRead(filePath)
+        LogMessage("File read successfully.")
+    } catch {
+        LogMessage("Error reading file: " filePath)
+        MsgBox("Error reading file: " filePath)
+        ExitSub()
+    }
+    
+    ; Initialize an empty array to store the pattern
+    pattern := []
+    
+    ; Use StrSplit to handle newlines and commas
+    patternArray := StrSplit(pattern_str, "`n,`, ,`r")
+    
+    ; Initialize a temporary array to hold triplets
+    temp := []
+    
+    ; Loop through the split array and process each value
+    for line in patternArray {
+        if StrLen(line) > 0 {
+            temp.Push(Trim(line))  ; Add value to the temporary array
+            if (temp.Length() == 3) {
+                ; Once we have 3 values, log and join them as a triplet and push to the pattern array
+                triplet := temp[1] "," temp[2] "," temp[3]
+                LogMessage("Adding triplet to pattern: " triplet)
+                pattern.Push(triplet)
+                temp := []  ; Reset the temporary array for the next triplet
+            }
+        }
+    }
+    
+    LogMessage("Pattern loaded with " pattern.Length() " triplets.")
+    return pattern
+}
+
+Reset() {
+	global current_pattern, is_single_mode, peackkeeper_lock, current_weapon_type, current_weapon_num, current_pattern ; Make sure it's visible
+    is_single_mode := false
+    peackkeeper_lock := false
+    current_weapon_type := DEFAULT_WEAPON_TYPE
+    current_weapon_num := 0
+	current_pattern := ["0,0,0"]
+}
+
+IsSella() {
+    ; Get the color at the specified pixel coordinates
+    check_weapon2_color := PixelGetColor(WEAPON_2_PIXELS[1], WEAPON_2_PIXELS[2])
+    
+    ; Return whether the color matches SELLA_WEAPON_COLOR
+    return check_weapon2_color == SELLA_WEAPON_COLOR
+}
+
+SetSella() {
+	global current_pattern, current_weapon_type, SELLA_WEAPON_TYPE, SELLA_PATTERN ; Make sure it's visible
+	
+    ; Set the current weapon type and pattern to SELLA
+    current_weapon_type := SELLA_WEAPON_TYPE
+    current_pattern := SELLA_PATTERN
+    
+    ; Log with the current weapon type
+    LogMessage(current_weapon_type)
+}
+
+CheckSingleMode() {
+    return false
+}
+
+CheckWeapon(weapon_pixels) {
+    target_color := "0xFFFFFF"
+    i := 1
+    
+    ; Loop over weapon pixels, now using new loop syntax
+    Loop 3 {
+        check_point_color := PixelGetColor(weapon_pixels[i], weapon_pixels[i + 1])
+        if (weapon_pixels[i + 2] != (check_point_color == target_color)) {
+            return false
+        }
+        i += 3
+    }
+    return true
+}
+
+CheckTurbocharger(turbocharger_pixels) {
+    target_color := "0xFFFFFF"
+    check_point_color := PixelGetColor(turbocharger_pixels[1], turbocharger_pixels[2])
+    
+    ; Return true if the color matches the target color
+    return check_point_color == target_color
+}
+
+IsNemesisFullCharge() {
+	global NEMESIS_FULL_CHARGE_PIXELS, NEMESIS_FULL_CHARGE_PIXELS ; Make sure it's visible
+    target_color := "0xD6BD62"
+    check_point_color := PixelGetColor(NEMESIS_FULL_CHARGE_PIXELS[1], NEMESIS_FULL_CHARGE_PIXELS[2])
+    
+    ; Return true if the color matches the target color
+    return check_point_color == target_color
+}
+
+IsValidWeaponColor(weapon_color) {
+	global LIGHT_WEAPON_COLOR, HEAVY_WEAPON_COLOR, SNIPER_WEAPON_COLOR, ENERGY_WEAPON_COLOR, SUPPY_DROP_COLOR, SHOTGUN_WEAPON_COLOR ; Make sure it's visible
+	
+    ; Log the current weapon color being checked
+    LogMessage("Checking weapon color: " weapon_color)
+    
+    ; Log all the defined weapon colors
+    LogMessage("LIGHT_WEAPON_COLOR: " LIGHT_WEAPON_COLOR)
+    LogMessage("HEAVY_WEAPON_COLOR: " HEAVY_WEAPON_COLOR)
+    LogMessage("SNIPER_WEAPON_COLOR: " SNIPER_WEAPON_COLOR)
+    LogMessage("ENERGY_WEAPON_COLOR: " ENERGY_WEAPON_COLOR)
+    LogMessage("SUPPY_DROP_COLOR: " SUPPY_DROP_COLOR)
+    LogMessage("SHOTGUN_WEAPON_COLOR: " SHOTGUN_WEAPON_COLOR)
+
+    ; Check if the weapon color matches any of the predefined valid colors
+    valid := weapon_color == LIGHT_WEAPON_COLOR 
+        || weapon_color == HEAVY_WEAPON_COLOR 
+        || weapon_color == SNIPER_WEAPON_COLOR 
+        || weapon_color == ENERGY_WEAPON_COLOR 
+        || weapon_color == SUPPY_DROP_COLOR 
+        || weapon_color == SHOTGUN_WEAPON_COLOR
+
+    ; Log whether the weapon color is valid or not
+    if valid {
+        LogMessage("Weapon color " weapon_color " is valid.")
+    } else {
+        LogMessage("Weapon color " weapon_color " is not valid.")
+    }
+
+    return valid
+}
+
+
+
+IsMouseShown() {
+    StructSize := A_PtrSize + 16
+    InfoStruct := Buffer(StructSize)  ; Allocate buffer for CURSORINFO
+
+    ; Set the size of the structure (cbSize) in the first element of the buffer using the new NumPut syntax
+    NumPut("UInt", StructSize, InfoStruct)  ; The structure's first element (cbSize) is the size of the structure
+    
+    ; Call GetCursorInfo with the pointer to the buffer
+    if (DllCall("GetCursorInfo", "Ptr", InfoStruct)) {
+        ; Get the flags from the buffer at the 9th byte (offset 8) to check visibility
+        flags := NumGet(InfoStruct, 8, "UInt")
+        
+        ; If flags > 1, cursor is visible
+        return flags > 1
+    }
+    
+    return false  ; Default return if DllCall fails
+}
+
+ShowToolTip(Text) {
+	global show_tooltip ; Make sure it's visible
+
+	if (show_tooltip == "1") {
+		; Show the tooltip at the calculated position
+		ToolTip(Text)
+		; Set a timer to remove the tooltip
+		SetTimer () => ToolTip(), -500
+	}
+}
+
+ExitSub() {
+    global hHook, hMod
+    
+    LogMessage("Starting ExitSub...")
+
+    if hHook {
+        ; Unhook the Windows hook if it exists
+        DllCall("UnhookWindowsHookEx", "Ptr", hHook)
+        LogMessage("Windows hook unhooked.")
+    } else {
+        LogMessage("No hook found to unhook.")
+    }
+    
+    if hMod {
+        ; Free the library if it was loaded
+        DllCall("FreeLibrary", "Ptr", hMod)
+        LogMessage("Library unloaded.")
+    } else {
+        LogMessage("No library found to unload.")
+    }
+    
+    ; Exit the application
+    LogMessage("Exiting application.")
+    MsgBox("Exiting application!")
+    ExitApp
+}
+
+LogMessage(message) {
+	global debug, tempFilePath  ; Ensure they are accessible
+	
+    if (debug == "1") {
+        try {
+            if !FileExist(tempFilePath) {  ; Check if log file exists
+                FileAppend("", tempFilePath)  ; Create it if not
+            }
+            ; Append the message to the log file
+            FileAppend(message "`n", tempFilePath)
+        } catch {
+            MsgBox("Error writing to log file")
+        }
+    }
+}
+
+DetectAndSetWeapon() {
+	global current_pattern, current_weapon_type ; Make sure it's visible
+	global WEAPON_1_PIXELS, WEAPON_2_PIXELS
+	
+    LogMessage("DetectAndSetWeapon called")
+
+    Reset()
+
+    if IsSella() {
+        SetSella()
+        LogMessage("Weapon: Sella detected")
+        return
+    }
+
+    is_single_mode := CheckSingleMode()
+    LogMessage("Single mode: " . is_single_mode)
+
+    ; First, check which weapon is active
+    weapon1_color := PixelGetColor(WEAPON_1_PIXELS[1], WEAPON_1_PIXELS[2])
+    weapon2_color := PixelGetColor(WEAPON_2_PIXELS[1], WEAPON_2_PIXELS[2])
+
+    LogMessage("Weapon 1 Color: " . weapon1_color)
+    LogMessage("Weapon 2 Color: " . weapon2_color)
+
+    if IsValidWeaponColor(weapon1_color) {
+        check_point_color := weapon1_color
+        current_weapon_num := 1
+        LogMessage("Weapon 1 is valid")
+    } else if IsValidWeaponColor(weapon2_color) {
+        check_point_color := weapon2_color
+        current_weapon_num := 2
+        LogMessage("Weapon 2 is valid")
+    } else {
+        LogMessage("No valid weapon color found")
+        return
+    }
+
+    ; Then, check the weapon type
+    if check_point_color == LIGHT_WEAPON_COLOR {
+        if CheckWeapon(R301_PIXELS) {
+            current_weapon_type := R301_WEAPON_TYPE
+            current_pattern := R301_PATTERN
+            LogMessage("Weapon: R301")
+        } else if CheckWeapon(R99_PIXELS) {
+            current_weapon_type := R99_WEAPON_TYPE
+            current_pattern := R99_PATTERN
+            is_gold_optics_weapon := true
+            LogMessage("Weapon: R99 with gold optics")
+        } else if CheckWeapon(P2020_PIXELS) {
+            current_weapon_type := P2020_WEAPON_TYPE
+            current_pattern := P2020_PATTERN
+            is_gold_optics_weapon := true
+            LogMessage("Weapon: P2020 with gold optics")
+        } else if CheckWeapon(RE45_PIXELS) {
+            current_weapon_type := RE45_WEAPON_TYPE
+            current_pattern := RE45_PATTERN
+            is_gold_optics_weapon := true
+            LogMessage("Weapon: RE45 with gold optics")
+        } else if CheckWeapon(ALTERNATOR_PIXELS) {
+            current_weapon_type := ALTERNATOR_WEAPON_TYPE
+            current_pattern := ALTERNATOR_PATTERN
+            is_gold_optics_weapon := true
+            LogMessage("Weapon: Alternator with gold optics")
+        } else if CheckWeapon(CAR_PIXELS) {
+            current_weapon_type := CAR_WEAPON_TYPE
+            current_pattern := CAR_PATTERN
+            is_gold_optics_weapon := true
+            LogMessage("Weapon: CAR with gold optics")
+        } else if CheckWeapon(G7_PIXELS) {
+            current_weapon_type := G7_WEAPON_TYPE
+            current_pattern := G7_PATTERN
+            LogMessage("Weapon: G7")
+        } else if CheckWeapon(SPITFIRE_PIXELS) {
+            current_weapon_type := SPITFIRE_WEAPON_TYPE
+            current_pattern := SPITFIRE_PATTERN
+            LogMessage("Weapon: Spitfire")
+        }
+    } else if check_point_color == HEAVY_WEAPON_COLOR {
+        if CheckWeapon(FLATLINE_PIXELS) {
+            current_weapon_type := FLATLINE_WEAPON_TYPE
+            current_pattern := FLATLINE_PATTERN
+            LogMessage("Weapon: Flatline")
+        } else if CheckWeapon(PROWLER_PIXELS) {
+            current_weapon_type := PROWLER_WEAPON_TYPE
+            current_pattern := PROWLER_PATTERN
+            LogMessage("Weapon: Prowler")
+        } else if CheckWeapon(RAMPAGE_PIXELS) {
+            current_weapon_type := RAMPAGE_WEAPON_TYPE
+            current_pattern := RAMPAGE_PATTERN
+            LogMessage("Weapon: Rampage")
+        } else if CheckWeapon(CAR_PIXELS) {
+            current_weapon_type := CAR_WEAPON_TYPE
+            current_pattern := CAR_PATTERN
+            is_gold_optics_weapon := true
+            LogMessage("Weapon: CAR with gold optics")
+        } else if CheckWeapon(P3030_PIXELS) {
+            current_weapon_type := P3030_WEAPON_TYPE
+            current_pattern := P3030_PATTERN
+            LogMessage("Weapon: 3030")
+        } else if CheckWeapon(HEMLOK_PIXELS) {
+            current_weapon_type := HEMLOK_WEAPON_TYPE
+            current_pattern := HEMLOK_PATTERN
+            if is_single_mode {
+                current_weapon_type := HEMLOK_SINGLE_WEAPON_TYPE
+                current_pattern := HEMLOK_SINGLE_PATTERN
+            }
+            LogMessage("Weapon: Hemlok")
+        }
+    } else if check_point_color == ENERGY_WEAPON_COLOR {
+        if CheckWeapon(VOLT_PIXELS) {
+            current_weapon_type := VOLT_WEAPON_TYPE
+            current_pattern := VOLT_PATTERN
+            is_gold_optics_weapon := true
+            LogMessage("Weapon: Volt with gold optics")
+        } else if CheckWeapon(DEVOTION_PIXELS) {
+            current_weapon_type := DEVOTION_WEAPON_TYPE
+            current_pattern := DEVOTION_PATTERN
+            if CheckTurbocharger(DEVOTION_TURBOCHARGER_PIXELS) {
+                current_pattern := TURBODEVOTION_PATTERN
+                current_weapon_type := DEVOTION_TURBO_WEAPON_TYPE
+            }
+            LogMessage("Weapon: Devotion")
+        } else if CheckWeapon(HAVOC_PIXELS) {
+            current_weapon_type := HAVOC_WEAPON_TYPE
+            current_pattern := HAVOC_PATTERN
+            if CheckTurbocharger(HAVOC_TURBOCHARGER_PIXELS) {
+                current_weapon_type := HAVOC_TURBO_WEAPON_TYPE
+            }
+            LogMessage("Weapon: Havoc")
+        } else if CheckWeapon(NEMESIS_PIXELS) {
+            current_weapon_type := NEMESIS_WEAPON_TYPE
+            current_pattern := NEMESIS_PATTERN
+            if IsNemesisFullCharge() {
+                current_weapon_type := NEMESIS_CHARGED_WEAPON_TYPE
+                current_pattern := NEMESIS_CHARGED_PATTERN
+            }
+            LogMessage("Weapon: Nemesis")
+        } else if CheckWeapon(LSTAR_PIXELS) {
+            current_weapon_type := LSTAR_WEAPON_TYPE
+            current_pattern := LSTAR_PATTERN
+            LogMessage("Weapon: LSTAR")
+        }
+    } else if check_point_color == SHOTGUN_WEAPON_COLOR {
+        is_gold_optics_weapon := true
+        current_weapon_type := SHOTGUN_WEAPON_TYPE
+        LogMessage("Weapon: Shotgun with gold optics")
+    } else if check_point_color == SNIPER_WEAPON_COLOR {
+        is_gold_optics_weapon := true
+        if CheckWeapon(WINGMAN_PIXELS) {
+            current_weapon_type := WINGMAN_WEAPON_TYPE
+            current_pattern := WINGMAN_PATTERN
+            LogMessage("Weapon: Wingman")
+        } else {
+            current_weapon_type := SNIPER_WEAPON_TYPE
+            LogMessage("Weapon: Sniper")
+        }
+    } else if check_point_color == SUPPY_DROP_COLOR {
+        if CheckWeapon(R99_PIXELS) {
+            current_weapon_type := R99_WEAPON_TYPE
+            current_pattern := R99_PATTERN
+            is_gold_optics_weapon := true
+            LogMessage("Weapon: R99 from Supply Drop with gold optics")
+        } else if CheckWeapon(DEVOTION_PIXELS) {
+            current_weapon_type := DEVOTION_WEAPON_TYPE
+            current_pattern := DEVOTION_PATTERN
+            if CheckTurbocharger(DEVOTION_TURBOCHARGER_PIXELS) {
+                current_pattern := TURBODEVOTION_PATTERN
+                current_weapon_type := DEVOTION_TURBO_WEAPON_TYPE
+            }
+            LogMessage("Weapon: Devotion from Supply Drop")
+        }
+    }
+
+    LogMessage(current_weapon_type)
+}
+
+MoveMouse() {
+	global debug, current_pattern, is_single_mode, ads_only, trigger_only ; Make sure it's visible
+	
+    LogMessage("LButton pressed. Starting checks.")
+
+    ; Check if the mouse is visible or the weapon type should be ignored
+    if IsMouseShown() || current_weapon_type == DEFAULT_WEAPON_TYPE || current_weapon_type == SHOTGUN_WEAPON_TYPE || current_weapon_type == SNIPER_WEAPON_TYPE {
+        LogMessage("Mouse is shown or weapon type is ignored. Exiting.")
+        return
+    }
+
+    ; Check if single mode is active
+    if is_single_mode == "1" {
+        LogMessage("Single mode is active. Exiting.")
+        return
+    }
+
+    ; Check if ads_only is true and right mouse button isn't pressed
+    if ads_only == "1" && !GetKeyState("RButton") {
+        LogMessage("ADS only is true and RButton not pressed. Exiting.")
+        return
+    }
+
+    ; Check if trigger_only is true and the trigger button isn't pressed
+    if trigger_only == "1" && !GetKeyState(trigger_button, "T") {
+        LogMessage("Trigger only is true and trigger button not pressed. Exiting.")
+        return
+    }
+
+    ; Handle HAVOC_WEAPON_TYPE special delay
+    if current_weapon_type == HAVOC_WEAPON_TYPE {
+        LogMessage("Current weapon is HAVOC. Adding delay of 400ms.")
+        Sleep(400)
+    }
+
+    ; Handle NEMESIS weapon behavior
+    if current_weapon_type == NEMESIS_WEAPON_TYPE || current_weapon_type == NEMESIS_CHARGED_WEAPON_TYPE {
+        LogMessage("Current weapon is NEMESIS. Checking charge status.")
+        if IsNemesisFullCharge() {
+            current_weapon_type := NEMESIS_CHARGED_WEAPON_TYPE
+            current_pattern := NEMESIS_CHARGED_PATTERN
+            LogMessage("NEMESIS fully charged. Using charged pattern.")
+        } else {
+            current_weapon_type := NEMESIS_WEAPON_TYPE
+            current_pattern := NEMESIS_PATTERN
+            LogMessage("NEMESIS not fully charged. Using normal pattern.")
+        }
+    }
+	
+	; Log the entire current pattern and its length
+	LogMessage("Current Pattern: " current_pattern)
+	LogMessage("Current Pattern Length: " current_pattern.Length())
+
+    ; Loop to manage recoil compensation
     Loop {
         x := 0
         y := 0
         interval := 20
-        if (A_Index <= current_pattern.MaxIndex()) {
-            compensation := StrSplit(current_pattern[Min(A_Index, current_pattern.MaxIndex())],",")
-            if (compensation.MaxIndex() < 3) {
+		
+		; If within current pattern, get the compensation values
+        if A_Index <= current_pattern.Length() {
+            compensation := StrSplit(current_pattern[Min(A_Index, current_pattern.Length())], ",")
+ 
+			; Log the full compensation array for debug
+			LogMessage("Compensation Array: " compensation)
+
+            ; If invalid compensation, exit the loop
+            if compensation.Length() < 3 {
+                LogMessage("Invalid compensation found. Exiting.")
                 return
             }
+
             x := compensation[1]
             y := compensation[2]
             interval := compensation[3]
-        }
 
-        if (IsAutoClickNeeded()) {
-            Click
-            Random, rand, 1, 20
-            interval := interval + rand
+            LogMessage("Recoil compensation - X: " x ", Y: " y ", Interval: " interval)
         }
-        
-        DllCall("mouse_event", uint, 0x01, uint, Round(x * modifier), uint, Round(y * modifier))
-        if (debug) {
-            ToolTip % x " " y " " a_index
+		
+		; Apply the recoil compensation with DllCall to mouse_event
+        DllCall("mouse_event", "UInt", 0x01, "Int", Round(x * modifier), "Int", Round(y * modifier))
+        LogMessage("Mouse event called with X: " Round(x * modifier) ", Y: " Round(y * modifier))
+		
+		; Show tooltip if debug is enabled
+        if (debug == "1") {
+            ShowToolTip(x " " y " " A_Index)
+            LogMessage("Tooltip shown for recoil X: " x ", Y: " y ", Index: " A_Index)
         }
-        
-        Sleep, interval
-
-        if (!GetKeyState("LButton","P")) {
+		
+		; Wait for the interval before applying the next step in the recoil pattern
+        LogMessage("Sleeping for " interval "ms.")
+        Sleep(Round(interval))
+		
+        ; Exit the loop if the left mouse button is no longer held
+        if !GetKeyState("LButton", "P") {
+            LogMessage("LButton released. Exiting loop.")
             break
         }
     }
-return
-
-~$+c::
-    if (IsMouseShown() || !superglide) {
-        Send, {Blind}{c down}
-        return
-    }
-    Send, {Space}
-    Sleep, 1
-    Send, {Control down}
-    KeyWait, c
-    Send {Control up}
-return
-
-IniRead:
-    IfNotExist, settings.ini
-    {
-        MsgBox, Couldn't find settings.ini. I'll create one for you.
-
-        IniWrite, "1920x1080", settings.ini, screen settings, resolution
-        IniWrite, "Normal"`n, settings.ini, screen settings, colorblind
-        IniWrite, "5.0", settings.ini, mouse settings, sens
-        IniWrite, "1.0", settings.ini, mouse settings, zoom_sens
-        IniWrite, "1", settings.ini, mouse settings, auto_fire
-        IniWrite, "0"`n, settings.ini, mouse settings, ads_only
-        IniWrite, "0", settings.ini, trigger settings, trigger_only
-        IniWrite, "Capslock"`n, settings.ini, trigger settings, trigger_button
-        IniWrite, "0", settings.ini, other settings, superglide
-        IniWrite, "0", settings.ini, other settings, debug
-        Run "apexmaster.ahk"
-    }
-    Else {
-        IniRead, resolution, settings.ini, screen settings, resolution
-        IniRead, colorblind, settings.ini, screen settings, colorblind
-        IniRead, zoom_sens, settings.ini, mouse settings, zoom_sens
-        IniRead, sens, settings.ini, mouse settings, sens
-        IniRead, auto_fire, settings.ini, mouse settings, auto_fire
-        IniRead, ads_only, settings.ini, mouse settings, ads_only
-        IniRead, trigger_only, settings.ini, trigger settings, trigger_only
-        IniRead, trigger_button, settings.ini, trigger settings, trigger_button
-        IniRead, superglide, settings.ini, other settings, superglide
-        IniRead, debug, settings.ini, other settings, debug
-    }
-return
-
-; Suspends the script when mouse is visible ie: inventory, menu, map.
-IsMouseShown()
-{
-    StructSize := A_PtrSize + 16
-    VarSetCapacity(InfoStruct, StructSize)
-    NumPut(StructSize, InfoStruct)
-    DllCall("GetCursorInfo", UInt, &InfoStruct)
-    Result := NumGet(InfoStruct, 8)
-
-    if Result > 1
-        return true
-    else
-        Return false
+    return
 }
-
-ActiveMonitorInfo(ByRef X, ByRef Y, ByRef Width, ByRef Height)
-{
-    CoordMode, Mouse, Screen
-    MouseGetPos, mouseX, mouseY
-    SysGet, monCount, MonitorCount
-    Loop %monCount% {
-        SysGet, curMon, Monitor, %a_index%
-        if ( mouseX >= curMonLeft and mouseX <= curMonRight and mouseY >= curMonTop and mouseY <= curMonBottom ) {
-            X := curMonTop
-            y := curMonLeft
-            Height := curMonBottom - curMonTop
-            Width := curMonRight - curMonLeft
-            return
-        }
-    }
-}
-
-Say(text)
-{
-    global SAPI
-    SAPI.Speak(text, 1)
-    sleep 150
-return
-}
-
-Tooltip(Text)
-{
-    ActiveMonitorInfo(X, Y, Width, Height)
-    xPos := Width / 2 - 50
-    yPos := Height / 2 + (Height / 10)
-    Tooltip, %Text%, xPos, yPos
-return
-}
-
-RunAsAdmin()
-{
-    Global 0
-    IfEqual, A_IsAdmin, 1, Return 0
-
-    Loop, %0%
-        params .= A_Space . %A_Index%
-
-    DllCall("shell32\ShellExecute" (A_IsUnicode ? "":"A"),uint,0,str,"RunAs",str,(A_IsCompiled ? A_ScriptFullPath : A_AhkPath),str,(A_IsCompiled ? "": """" . A_ScriptFullPath . """" . A_Space) params,str,A_WorkingDir,int,1)
-    ExitApp
-}
-
-HideProcess() 
-{
-    if ((A_Is64bitOS=1) && (A_PtrSize!=4))
-        hMod := DllCall("LoadLibrary", Str, "hyde64.dll", Ptr)
-    else if ((A_Is32bitOS=1) && (A_PtrSize=4))
-        hMod := DllCall("LoadLibrary", Str, "hyde.dll", Ptr)
-    else
-    {
-        MsgBox, Mixed Versions detected!`nOS Version and AHK Version need to be the same (x86 & AHK32 or x64 & AHK64).`n`nScript will now terminate!
-        ExitApp
-    }
-
-    if (hMod)
-    {
-        hHook := DllCall("SetWindowsHookEx", Int, 5, Ptr, DllCall("GetProcAddress", Ptr, hMod, AStr, "CBProc", ptr), Ptr, hMod, Ptr, 0, Ptr)
-        if (!hHook)
-        {
-            MsgBox, SetWindowsHookEx failed!`nScript will now terminate!
-            ExitApp
-        }
-    }
-    else
-    {
-        MsgBox, LoadLibrary failed!`nScript will now terminate!
-        ExitApp
-    }
-return
-}
-
-ExitSub:
-    if (hHook)
-    {
-        DllCall("UnhookWindowsHookEx", Ptr, hHook)
-        MsgBox, % "Process unhooked!"
-    }
-    if (hMod)
-    {
-        DllCall("FreeLibrary", Ptr, hMod)
-        MsgBox, % "Library unloaded"
-    }
-ExitApp
