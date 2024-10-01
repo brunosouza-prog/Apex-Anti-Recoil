@@ -116,6 +116,12 @@ btSave() {
     IniWrite(Saved.trigger_only, "settings.ini", "trigger settings", "trigger_only")
     IniWrite(Saved.trigger_button, "settings.ini", "trigger settings", "trigger_button")
     IniWrite(Saved.debug, "settings.ini", "other settings", "debug")
+	
+	; Run KeySharp with apexmaster.ahk as a parameter
+    keysharpPath := "Keysharp.exe" ; Adjust this path as needed
+    scriptPath := A_ScriptDir "\apexmaster.ahk" ; Path to your AHK script
+    Run('"' keysharpPath '" "' scriptPath '"')
+	
     ExitApp()
 }
 
