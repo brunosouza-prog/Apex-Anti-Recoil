@@ -22,7 +22,7 @@ global resolution := "1920x1080"
 global colorblind := "Normal"
 global sens := "5.0"
 global zoom_sens := "1.0"
-global auto_fire := "1"
+global auto_fire := "1" ; @TODO Bring it back auto_fire
 global ads_only := "0"
 global debug := "0"
 global trigger_only := "0"
@@ -152,7 +152,7 @@ return
 return
 
 ~$*Z::
-    Sleep(600)  
+    Sleep(600) ; @TODO Make sure Shiela ult is working properly
     if IsShiela() {
         SetShiela()
     } else {
@@ -544,6 +544,8 @@ Reset() {
 }
 
 IsShiela() {
+	global WEAPON_2_PIXELS, WEAPON_2_PIXELS, SHEILA_WEAPON_COLOR ; Make sure it's visible
+
     ; Get the color at the specified pixel coordinates
     check_weapon2_color := PixelGetColor(WEAPON_2_PIXELS[1], WEAPON_2_PIXELS[2])
     
@@ -563,7 +565,7 @@ SetShiela() {
 }
 
 CheckSingleMode() {
-    return false
+    return false ; @TODO Bring it back auto_fire
 }
 
 CheckWeapon(weapon_pixels) {
