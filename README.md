@@ -10,22 +10,22 @@ This script was designed to run using KeySharp 0.0.0.7 (not AHK). Download it he
 To run this script, use the following command in your Windows terminal (make sure to run as admin):
 
 ```
-[KEYSHARP_INSTALLATION_PATH]\Keysharp.exe [ANTI-RECOIL-SCRIPT-PATH]\apexmaster.ahk
+Keysharp.exe gui.ahk
 ```
 
-For example:
+Or using full Path:
 
 ```
-"C:\Program Files\Keysharp\Keysharp.exe" "C:\Users\yourusername\Downloads\Apex-Anti-Recoil\apexmaster.ahk"
+"C:\Program Files\Keysharp\Keysharp.exe" "C:\Users\yourusername\Downloads\Apex-Anti-Recoil\gui.ahk"
 ```
 
 ### Note
 
-Alternatively you can run the `run_apexmaster.bat`, but first just make sure you go into the file and change to the correct PATH then you can make a shortcut to your Desktop then right click on the shortcut -> go to `Show more options` -> `Properties` -> `Shortcut` -> `Advanced` -> `Run as administrator` -> `Ok` -> `Ok`
+Alternatively you can run the `run_apexmaster.bat`, make a shortcut to your Desktop then right click on the shortcut -> go to `Show more options` -> `Properties` -> `Shortcut` -> `Advanced` -> `Run as administrator` -> `Ok` -> `Ok` then you will be able to run it straight from your desktop.
 
-## Important Step
+## Current Settings
 
-Before running the script, make sure to modify the `settings.ini` file to match your current game setup. Below are the settings and their descriptions:
+Below are the settings and their descriptions:
 
 ### [screen settings]
 - `resolution`: Set this to your in-game resolution (e.g., `1920x1080`).
@@ -46,7 +46,7 @@ Before running the script, make sure to modify the `settings.ini` file to match 
 
 ## Don't forget this
 
-After you run it once and it's all working as expected, go into your settings.ini and make sure debug is set to `0`, otherwise your debug file will get really large really soon.
+After you run it once and it's all working as expected, make sure debug is disabled or set to `0`, otherwise your debug file will get really large really soon.
 
 ## Security Note
 
@@ -74,11 +74,11 @@ Alternatively, you can generate a UUID from a website such as [UUID Tools](https
 
 ## Todo
 
-- Bring back the gui.ahk
 - Improve recoil further
 - Bring back the rapid-fire feature and fix any issues with it
 - Fix Sheila
 - Add superglide macro (press and hold C with shift)
+- Add Gold Optics back
 
 ## Special Thanks
 
