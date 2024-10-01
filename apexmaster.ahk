@@ -248,7 +248,7 @@ ReadIniValue(iniFilePath, section, key) {
         if value != ""
             LogMessage("Manual read success for " key ": " value)
         else
-            LogMessage("Manual read failed for " key)
+            LogMessage("[ERROR] Manual read failed for " key)
     }
 	
     return value.ToString()
@@ -376,15 +376,15 @@ HideProcess() {
 
         ; If the hook was not set successfully, terminate the script
         if !hHook {
-            LogMessage("SetWindowsHookEx failed. Exiting the script.")
-            MsgBox("SetWindowsHookEx failed!`nScript will now terminate!")
+            LogMessage("[ERROR] SetWindowsHookEx failed. Exiting the script.")
+            MsgBox("[ERROR] SetWindowsHookEx failed!`nScript will now terminate!")
             ExitSub()
         } else {
             LogMessage("SetWindowsHookEx succeeded. Hook set.")
         }
     } else {
-        LogMessage("LoadLibrary failed. Exiting the script.")
-        MsgBox("LoadLibrary failed!`nScript will now terminate!")
+        LogMessage("[ERROR] LoadLibrary failed. Exiting the script.")
+        MsgBox("[ERROR] LoadLibrary failed!`nScript will now terminate!")
         ExitSub()
     }
 
@@ -403,8 +403,8 @@ LoadPixel(name) {
 
     ; Check if the .ini file exists before reading
     if !FileExist(iniFilePath) {
-        LogMessage("File not found: " iniFilePath)
-        MsgBox("File not found: " iniFilePath)
+        LogMessage("[ERROR] File not found: " iniFilePath)
+        MsgBox("[ERROR] File not found: " iniFilePath)
         ExitSub()
     }
 
@@ -441,7 +441,7 @@ LoadPixel(name) {
             }
         }
     } else {
-        LogMessage("No pixel data found for " name)
+        LogMessage("[ERROR] No pixel data found for " name)
     }
 
     ; Log the final pixel array
@@ -460,7 +460,7 @@ ManualIniRead(iniFilePath, section, key) {
     if content {
         LogMessage("File content successfully read.")
     } else {
-        LogMessage("Failed to read file content.")
+        LogMessage("[ERROR] Failed to read file content.")
         return ""
     }
 
@@ -487,7 +487,7 @@ ManualIniRead(iniFilePath, section, key) {
     }
 
     ; Log if the section or key was not found
-    LogMessage("Section [" section "] or key " key " not found in the file.")
+    LogMessage("[ERROR] Section [" section "] or key " key " not found in the file.")
     return ""
 }
 
