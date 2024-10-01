@@ -60,7 +60,7 @@ global P3030_WEAPON_TYPE := "3030"
 global SHOTGUN_WEAPON_TYPE := "shotgun"
 global SNIPER_WEAPON_TYPE := "sniper"
 global PEACEKEEPER_WEAPON_TYPE := "peacekeeper"
-global SELLA_WEAPON_TYPE := "sella"
+global SHEILA_WEAPON_TYPE := "shiela"
 
 ; x, y pos for weapon1 and weapon 2
 global WEAPON_1_PIXELS, WEAPON_2_PIXELS
@@ -79,10 +79,10 @@ global colorblind
 
 global SHOTGUN_WEAPON_COLOR := "0x6B2007" ;0x07206B
 global SNIPER_WEAPON_COLOR := "0x4B408F" ;0x8F404B
-global SELLA_WEAPON_COLOR := "0xA13CA1" ;NO CHANGES
+global SHEILA_WEAPON_COLOR := "0xA13CA1" ;NO CHANGES
 
 ; Declare global variables without loading the pixel data
-global R99_PIXELS, R301_PIXELS, P2020_PIXELS, RE45_PIXELS, G7_PIXELS, SPITFIRE_PIXELS
+global R99_PIXELS, ALTERNATOR_PIXELS, R301_PIXELS, P2020_PIXELS, RE45_PIXELS, G7_PIXELS, SPITFIRE_PIXELS
 global FLATLINE_PIXELS, PROWLER_PIXELS, RAMPAGE_PIXELS, P3030_PIXELS, CAR_PIXELS
 global DEVOTION_PIXELS, HAVOC_PIXELS, VOLT_PIXELS, NEMESIS_PIXELS, WINGMAN_PIXELS
 global HEMLOK_PIXELS, LSTAR_PIXELS, HAVOC_TURBOCHARGER_PIXELS, DEVOTION_TURBOCHARGER_PIXELS
@@ -99,7 +99,8 @@ global is_single_mode := false
 global R301_PATTERN, R99_PATTERN, P2020_PATTERN, RE45_PATTERN, G7_PATTERN, SPITFIRE_PATTERN, ALTERNATOR_PATTERN
 global DEVOTION_PATTERN, TURBODEVOTION_PATTERN, HAVOC_PATTERN, VOLT_PATTERN, NEMESIS_PATTERN, NEMESIS_CHARGED_PATTERN
 global CAR_PATTERN, FLATLINE_PATTERN, RAMPAGE_PATTERN, RAMPAGEAMP_PATTERN, PROWLER_PATTERN, P3030_PATTERN
-global WINGMAN_PATTERN, LSTAR_PATTERN, HEMLOK_PATTERN, HEMLOK_SINGLE_PATTERN, SELLA_PATTERN
+global WINGMAN_PATTERN, LSTAR_PATTERN, HEMLOK_PATTERN, HEMLOK_SINGLE_PATTERN, SHEILA_PATTERN
+global DEFAULT_PATTERN = ["0,0,0"]
 
 ; First, read the settings from the ini file
 ReadIni()
@@ -153,8 +154,8 @@ return
 
 ~$*Z::
     Sleep(600)  
-    if IsSella() {
-        SetSella()
+    if IsShiela() {
+        SetShiela()
     } else {
         Reset()
     }
@@ -256,7 +257,7 @@ ReadIniValue(iniFilePath, section, key) {
 
 LoadWeaponPixels() {
 	; Make sure the variables are visible in this function
-	global R99_PIXELS, R301_PIXELS, P2020_PIXELS, RE45_PIXELS, G7_PIXELS, SPITFIRE_PIXELS
+	global R99_PIXELS, ALTERNATOR_PIXELS, R301_PIXELS, P2020_PIXELS, RE45_PIXELS, G7_PIXELS, SPITFIRE_PIXELS
 	global FLATLINE_PIXELS, PROWLER_PIXELS, RAMPAGE_PIXELS, P3030_PIXELS, CAR_PIXELS
 	global DEVOTION_PIXELS, HAVOC_PIXELS, VOLT_PIXELS, NEMESIS_PIXELS, WINGMAN_PIXELS
 	global HEMLOK_PIXELS, LSTAR_PIXELS, HAVOC_TURBOCHARGER_PIXELS, DEVOTION_TURBOCHARGER_PIXELS
@@ -270,6 +271,7 @@ LoadWeaponPixels() {
 
     ; Load light weapon pixels
     R99_PIXELS := LoadPixel("r99")
+	ALTERNATOR_PIXELS := LoadPixel("alternator")
     R301_PIXELS := LoadPixel("r301")
     P2020_PIXELS := LoadPixel("p2020")
     RE45_PIXELS := LoadPixel("re45")
@@ -280,6 +282,7 @@ LoadWeaponPixels() {
     FLATLINE_PIXELS := LoadPixel("flatline")
     PROWLER_PIXELS := LoadPixel("prowler")
     RAMPAGE_PIXELS := LoadPixel("rampage")
+    HEMLOK_PIXELS := LoadPixel("hemlok")
     P3030_PIXELS := LoadPixel("p3030")
 
     ; Load special weapon pixels
@@ -287,23 +290,18 @@ LoadWeaponPixels() {
 
     ; Load energy weapon pixels
     DEVOTION_PIXELS := LoadPixel("devotion")
+    DEVOTION_TURBOCHARGER_PIXELS := LoadPixel("devotion_turbocharger")
     HAVOC_PIXELS := LoadPixel("havoc")
-    VOLT_PIXELS := LoadPixel("volt")
+    HAVOC_TURBOCHARGER_PIXELS := LoadPixel("havoc_turbocharger")
     NEMESIS_PIXELS := LoadPixel("nemesis")
+    NEMESIS_FULL_CHARGE_PIXELS := LoadPixel("nemesis_full_charge")
+    VOLT_PIXELS := LoadPixel("volt")
+    LSTAR_PIXELS := LoadPixel("lstar")
 
     ; Load sniper weapon pixels
     WINGMAN_PIXELS := LoadPixel("wingman")
-
-    ; Load supply drop weapon pixels
-    HEMLOK_PIXELS := LoadPixel("hemlok")
-    LSTAR_PIXELS := LoadPixel("lstar")
-
-    ; Load turbocharger pixels
-    HAVOC_TURBOCHARGER_PIXELS := LoadPixel("havoc_turbocharger")
-    DEVOTION_TURBOCHARGER_PIXELS := LoadPixel("devotion_turbocharger")
-
+	
     ; Load Nemesis full charge and single mode pixels
-    NEMESIS_FULL_CHARGE_PIXELS := LoadPixel("nemesis_full_charge")
     SINGLE_MODE_PIXELS := LoadPixel("single_mode")
 
     ; Load shotgun pixels
@@ -317,7 +315,7 @@ LoadWeaponPatterns() {
 	global R301_PATTERN, R99_PATTERN, P2020_PATTERN, RE45_PATTERN, G7_PATTERN, SPITFIRE_PATTERN, ALTERNATOR_PATTERN
 	global DEVOTION_PATTERN, TURBODEVOTION_PATTERN, HAVOC_PATTERN, VOLT_PATTERN, NEMESIS_PATTERN, NEMESIS_CHARGED_PATTERN
 	global CAR_PATTERN, FLATLINE_PATTERN, RAMPAGE_PATTERN, RAMPAGEAMP_PATTERN, PROWLER_PATTERN, P3030_PATTERN
-	global WINGMAN_PATTERN, LSTAR_PATTERN, HEMLOK_PATTERN, HEMLOK_SINGLE_PATTERN, SELLA_PATTERN
+	global WINGMAN_PATTERN, LSTAR_PATTERN, HEMLOK_PATTERN, HEMLOK_SINGLE_PATTERN, SHEILA_PATTERN
 	
     LogMessage("Loading weapon patterns...")
 
@@ -356,8 +354,8 @@ LoadWeaponPatterns() {
     HEMLOK_PATTERN := LoadPattern("Hemlok.txt")
     HEMLOK_SINGLE_PATTERN := LoadPattern("HemlokSingle.txt")
 
-    ; Load sella weapon pattern
-    SELLA_PATTERN := LoadPattern("Sella.txt")
+    ; Load sheila weapon pattern
+    SHEILA_PATTERN := LoadPattern("Sheila.txt")
 
     LogMessage("Weapon patterns loaded successfully.")
 }
@@ -543,27 +541,29 @@ LoadPattern(filename) {
 
 Reset() {
 	global current_pattern, is_single_mode, peackkeeper_lock, current_weapon_type, current_weapon_num, current_pattern ; Make sure it's visible
+	global DEFAULT_WEAPON_TYPE, DEFAULT_PATTERN ; Make sure it's visible
+	
     is_single_mode := false
     peackkeeper_lock := false
     current_weapon_type := DEFAULT_WEAPON_TYPE
     current_weapon_num := 0
-	current_pattern := ["0,0,0"]
+	current_pattern := DEFAULT_PATTERN
 }
 
-IsSella() {
+IsShiela() {
     ; Get the color at the specified pixel coordinates
     check_weapon2_color := PixelGetColor(WEAPON_2_PIXELS[1], WEAPON_2_PIXELS[2])
     
-    ; Return whether the color matches SELLA_WEAPON_COLOR
-    return check_weapon2_color == SELLA_WEAPON_COLOR
+    ; Return whether the color matches SHEILA_WEAPON_COLOR
+    return check_weapon2_color == SHEILA_WEAPON_COLOR
 }
 
-SetSella() {
-	global current_pattern, current_weapon_type, SELLA_WEAPON_TYPE, SELLA_PATTERN ; Make sure it's visible
+SetShiela() {
+	global current_pattern, current_weapon_type, SHEILA_WEAPON_TYPE, SHEILA_PATTERN ; Make sure it's visible
 	
-    ; Set the current weapon type and pattern to SELLA
-    current_weapon_type := SELLA_WEAPON_TYPE
-    current_pattern := SELLA_PATTERN
+    ; Set the current weapon type and pattern to SHEILA
+    current_weapon_type := SHEILA_WEAPON_TYPE
+    current_pattern := SHEILA_PATTERN
     
     ; Log with the current weapon type
     LogMessage(current_weapon_type)
@@ -720,9 +720,9 @@ DetectAndSetWeapon() {
 
     Reset()
 
-    if IsSella() {
-        SetSella()
-        LogMessage("Weapon: Sella detected")
+    if IsShiela() {
+        SetShiela()
+        LogMessage("Weapon: Sheila detected")
         return
     }
 
@@ -758,28 +758,23 @@ DetectAndSetWeapon() {
         } else if CheckWeapon(R99_PIXELS) {
             current_weapon_type := R99_WEAPON_TYPE
             current_pattern := R99_PATTERN
-            is_gold_optics_weapon := true
-            LogMessage("Weapon: R99 with gold optics")
+            LogMessage("Weapon: R99")
         } else if CheckWeapon(P2020_PIXELS) {
             current_weapon_type := P2020_WEAPON_TYPE
             current_pattern := P2020_PATTERN
-            is_gold_optics_weapon := true
-            LogMessage("Weapon: P2020 with gold optics")
+            LogMessage("Weapon: P2020")
         } else if CheckWeapon(RE45_PIXELS) {
             current_weapon_type := RE45_WEAPON_TYPE
             current_pattern := RE45_PATTERN
-            is_gold_optics_weapon := true
-            LogMessage("Weapon: RE45 with gold optics")
+            LogMessage("Weapon: RE45")
         } else if CheckWeapon(ALTERNATOR_PIXELS) {
             current_weapon_type := ALTERNATOR_WEAPON_TYPE
             current_pattern := ALTERNATOR_PATTERN
-            is_gold_optics_weapon := true
-            LogMessage("Weapon: Alternator with gold optics")
+            LogMessage("Weapon: Alternator")
         } else if CheckWeapon(CAR_PIXELS) {
             current_weapon_type := CAR_WEAPON_TYPE
             current_pattern := CAR_PATTERN
-            is_gold_optics_weapon := true
-            LogMessage("Weapon: CAR with gold optics")
+            LogMessage("Weapon: CAR")
         } else if CheckWeapon(G7_PIXELS) {
             current_weapon_type := G7_WEAPON_TYPE
             current_pattern := G7_PATTERN
@@ -805,8 +800,7 @@ DetectAndSetWeapon() {
         } else if CheckWeapon(CAR_PIXELS) {
             current_weapon_type := CAR_WEAPON_TYPE
             current_pattern := CAR_PATTERN
-            is_gold_optics_weapon := true
-            LogMessage("Weapon: CAR with gold optics")
+            LogMessage("Weapon: CAR")
         } else if CheckWeapon(P3030_PIXELS) {
             current_weapon_type := P3030_WEAPON_TYPE
             current_pattern := P3030_PATTERN
@@ -824,8 +818,7 @@ DetectAndSetWeapon() {
         if CheckWeapon(VOLT_PIXELS) {
             current_weapon_type := VOLT_WEAPON_TYPE
             current_pattern := VOLT_PATTERN
-            is_gold_optics_weapon := true
-            LogMessage("Weapon: Volt with gold optics")
+            LogMessage("Weapon: Volt")
         } else if CheckWeapon(DEVOTION_PIXELS) {
             current_weapon_type := DEVOTION_WEAPON_TYPE
             current_pattern := DEVOTION_PATTERN
@@ -855,25 +848,24 @@ DetectAndSetWeapon() {
             LogMessage("Weapon: LSTAR")
         }
     } else if check_point_color == SHOTGUN_WEAPON_COLOR {
-        is_gold_optics_weapon := true
         current_weapon_type := SHOTGUN_WEAPON_TYPE
-        LogMessage("Weapon: Shotgun with gold optics")
+		current_pattern := DEFAULT_PATTERN
+        LogMessage("Weapon: SHOTGUN")
     } else if check_point_color == SNIPER_WEAPON_COLOR {
-        is_gold_optics_weapon := true
         if CheckWeapon(WINGMAN_PIXELS) {
             current_weapon_type := WINGMAN_WEAPON_TYPE
             current_pattern := WINGMAN_PATTERN
             LogMessage("Weapon: Wingman")
         } else {
             current_weapon_type := SNIPER_WEAPON_TYPE
+			current_pattern := DEFAULT_PATTERN
             LogMessage("Weapon: Sniper")
         }
     } else if check_point_color == SUPPY_DROP_COLOR {
         if CheckWeapon(R99_PIXELS) {
             current_weapon_type := R99_WEAPON_TYPE
             current_pattern := R99_PATTERN
-            is_gold_optics_weapon := true
-            LogMessage("Weapon: R99 from Supply Drop with gold optics")
+            LogMessage("Weapon: R99 from Supply Drop")
         } else if CheckWeapon(DEVOTION_PIXELS) {
             current_weapon_type := DEVOTION_WEAPON_TYPE
             current_pattern := DEVOTION_PATTERN
@@ -883,7 +875,14 @@ DetectAndSetWeapon() {
             }
             LogMessage("Weapon: Devotion from Supply Drop")
         }
-    }
+		else {
+			current_weapon_type := DEFAULT_WEAPON_TYPE
+			current_pattern := DEFAULT_PATTERN
+		}
+    } else {
+		current_weapon_type := DEFAULT_WEAPON_TYPE
+		current_pattern := DEFAULT_PATTERN
+	}
 
     LogMessage(current_weapon_type)
 }
