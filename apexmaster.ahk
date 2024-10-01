@@ -249,7 +249,8 @@ ReadIniValue(iniFilePath, section, key) {
             LogMessage("[ERROR] Manual read failed for " key)
     }
 	
-    return value.ToString()
+    ; Remove extra quotation marks and ensure the value is returned as a string
+    return Trim(StrReplace(value.ToString(), '"'))
 }
 
 LoadWeaponPixels() {
