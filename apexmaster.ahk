@@ -88,8 +88,10 @@ global DEVOTION_PIXELS, HAVOC_PIXELS, VOLT_PIXELS, NEMESIS_PIXELS
 global HEMLOK_PIXELS, LSTAR_PIXELS, HAVOC_TURBOCHARGER_PIXELS, DEVOTION_TURBOCHARGER_PIXELS
 global NEMESIS_FULL_CHARGE_PIXELS, SINGLE_MODE_PIXELS, PEACEKEEPER_PIXELS
 
+global DEFAULT_PATTERN = ["0,0,0"]
+
 ; weapon detection
-global current_pattern := ["0,0,0"]
+global current_pattern := DEFAULT_PATTERN
 global current_weapon_type := DEFAULT_WEAPON_TYPE
 global current_weapon_num := 0
 global peackkeeper_lock := false
@@ -100,7 +102,6 @@ global R301_PATTERN, R99_PATTERN, P2020_PATTERN, RE45_PATTERN, G7_PATTERN, SPITF
 global DEVOTION_PATTERN, TURBODEVOTION_PATTERN, HAVOC_PATTERN, VOLT_PATTERN, NEMESIS_PATTERN, NEMESIS_CHARGED_PATTERN
 global CAR_PATTERN, FLATLINE_PATTERN, RAMPAGE_PATTERN, RAMPAGEAMP_PATTERN, PROWLER_PATTERN, P3030_PATTERN
 global LSTAR_PATTERN, HEMLOK_PATTERN, HEMLOK_SINGLE_PATTERN, SHEILA_PATTERN
-global DEFAULT_PATTERN = ["0,0,0"]
 
 ; Clear the debug log file at the start of the script
 if (FileExist(tempFilePath)) {
@@ -180,7 +181,7 @@ return
 RunAsAdmin() {
     LogMessage("RunAsAdmin called.")
     
-    if A_IsAdmin {
+    if (A_IsAdmin) {
         LogMessage("Already running as Admin.")
         return 0
     }
@@ -197,7 +198,7 @@ ReadIni() {
     
     LogMessage("Checking if settings.ini exists at: " iniFilePath)
     
-    if !FileExist(iniFilePath) {
+    if (!FileExist(iniFilePath)) {
         LogMessage("settings.ini not found. Creating a new one.")
         MsgBox("v"version " - Couldn't find settings.ini. I'll create one for you.")
         IniWrite("1920x1080", iniFilePath, "screen settings", "resolution")
@@ -243,7 +244,7 @@ ReadIniValue(iniFilePath, section, key) {
     } catch {
         LogMessage("IniRead failed for " key ". Attempting manual file read.")
         value := ManualIniRead(iniFilePath, section, key)
-        if value != ""
+        if (value != "")
             LogMessage("Manual read success for " key ": " value)
         else
             LogMessage("[ERROR] Manual read failed for " key)
@@ -367,13 +368,13 @@ HideProcess() {
     }
 
     ; If the library is loaded successfully
-    if hMod {
+    if (hMod) {
         LogMessage("Library loaded successfully.")
         
         hHook := DllCall("SetWindowsHookEx", "Int", 5, "Ptr", DllCall("GetProcAddress", "Ptr", hMod, "AStr", "CBProc", "Ptr"), "Ptr", hMod, "Ptr", 0, "Ptr")
 
         ; If the hook was not set successfully, terminate the script
-        if !hHook {
+        if (!hHook) {
             LogMessage("[ERROR] SetWindowsHookEx failed. Exiting the script.")
             MsgBox("v"version " - [ERROR] SetWindowsHookEx failed!`nScript will now terminate!")
             ExitSub()
@@ -401,7 +402,7 @@ LoadPixel(name) {
     LogMessage("Starting LoadPixel for weapon: " name)
 
     ; Check if the .ini file exists before reading
-    if !FileExist(iniFilePath) {
+    if (!FileExist(iniFilePath)) {
         LogMessage("[ERROR] File not found: " iniFilePath)
         MsgBox("v"version " - [ERROR] File not found: " iniFilePath)
         ExitSub()
@@ -456,7 +457,7 @@ ManualIniRead(iniFilePath, section, key) {
     content := FileRead(iniFilePath) ; Read the entire file
     
     ; Log if the content is read
-    if content {
+    if (content) {
         LogMessage("File content successfully read.")
     } else {
         LogMessage("[ERROR] Failed to read file content.")
@@ -517,7 +518,7 @@ LoadPattern(filename) {
     
     ; Loop through the split array and process each value
     for line in patternArray {
-        if StrLen(line) > 0 {
+        if (StrLen(line) > 0) {
             temp.Push(Trim(line))  ; Add value to the temporary array
             if (temp.Length() == 3) {
                 ; Once we have 3 values, log and join them as a triplet and push to the pattern array
@@ -624,7 +625,7 @@ IsValidWeaponColor(weapon_color) {
         || weapon_color == SHOTGUN_WEAPON_COLOR
 
     ; Log whether the weapon color is valid or not
-    if valid {
+    if (valid) {
         LogMessage("Weapon color " weapon_color " is valid.")
     } else {
         LogMessage("Weapon color " weapon_color " is not valid.")
@@ -670,7 +671,7 @@ ExitSub() {
     
     LogMessage("Starting ExitSub...")
 
-    if hHook {
+    if (hHook) {
         ; Unhook the Windows hook if it exists
         DllCall("UnhookWindowsHookEx", "Ptr", hHook)
         LogMessage("Windows hook unhooked.")
@@ -678,7 +679,7 @@ ExitSub() {
         LogMessage("No hook found to unhook.")
     }
     
-    if hMod {
+    if (hMod) {
         ; Free the library if it was loaded
         DllCall("FreeLibrary", "Ptr", hMod)
         LogMessage("Library unloaded.")
@@ -697,7 +698,7 @@ LogMessage(message) {
 	
     if (debug == "1") {
         try {
-            if !FileExist(tempFilePath) {  ; Check if log file exists
+            if (!FileExist(tempFilePath)) {  ; Check if log file exists
                 FileAppend("", tempFilePath)  ; Create it if not
             }
             ; Append the message to the log file
@@ -716,7 +717,7 @@ DetectAndSetWeapon() {
 
     Reset()
 
-    if IsShiela() {
+    if (IsShiela()) {
         SetShiela()
         LogMessage("Weapon: Sheila detected")
         return
@@ -732,11 +733,11 @@ DetectAndSetWeapon() {
     LogMessage("Weapon 1 Color: " . weapon1_color)
     LogMessage("Weapon 2 Color: " . weapon2_color)
 
-    if IsValidWeaponColor(weapon1_color) {
+    if (IsValidWeaponColor(weapon1_color)) {
         check_point_color := weapon1_color
         current_weapon_num := 1
         LogMessage("Weapon 1 is valid")
-    } else if IsValidWeaponColor(weapon2_color) {
+    } else if (IsValidWeaponColor(weapon2_color)) {
         check_point_color := weapon2_color
         current_weapon_num := 2
         LogMessage("Weapon 2 is valid")
@@ -746,120 +747,120 @@ DetectAndSetWeapon() {
     }
 
     ; Then, check the weapon type
-    if check_point_color == LIGHT_WEAPON_COLOR {
-        if CheckWeapon(R301_PIXELS) {
+    if (check_point_color == LIGHT_WEAPON_COLOR) {
+        if (CheckWeapon(R301_PIXELS)) {
             current_weapon_type := R301_WEAPON_TYPE
             current_pattern := R301_PATTERN
             LogMessage("Weapon: R301")
-        } else if CheckWeapon(R99_PIXELS) {
+        } else if (CheckWeapon(R99_PIXELS)) {
             current_weapon_type := R99_WEAPON_TYPE
             current_pattern := R99_PATTERN
             LogMessage("Weapon: R99")
-        } else if CheckWeapon(P2020_PIXELS) {
+        } else if (CheckWeapon(P2020_PIXELS)) {
             current_weapon_type := P2020_WEAPON_TYPE
             current_pattern := P2020_PATTERN
             LogMessage("Weapon: P2020")
-        } else if CheckWeapon(RE45_PIXELS) {
+        } else if (CheckWeapon(RE45_PIXELS)) {
             current_weapon_type := RE45_WEAPON_TYPE
             current_pattern := RE45_PATTERN
             LogMessage("Weapon: RE45")
-        } else if CheckWeapon(ALTERNATOR_PIXELS) {
+        } else if (CheckWeapon(ALTERNATOR_PIXELS)) {
             current_weapon_type := ALTERNATOR_WEAPON_TYPE
             current_pattern := ALTERNATOR_PATTERN
             LogMessage("Weapon: Alternator")
-        } else if CheckWeapon(CAR_PIXELS) {
+        } else if (CheckWeapon(CAR_PIXELS)) {
             current_weapon_type := CAR_WEAPON_TYPE
             current_pattern := CAR_PATTERN
             LogMessage("Weapon: CAR")
-        } else if CheckWeapon(G7_PIXELS) {
+        } else if (CheckWeapon(G7_PIXELS)) {
             current_weapon_type := G7_WEAPON_TYPE
             current_pattern := G7_PATTERN
             LogMessage("Weapon: G7")
-        } else if CheckWeapon(SPITFIRE_PIXELS) {
+        } else if (CheckWeapon(SPITFIRE_PIXELS)) {
             current_weapon_type := SPITFIRE_WEAPON_TYPE
             current_pattern := SPITFIRE_PATTERN
             LogMessage("Weapon: Spitfire")
         }
-    } else if check_point_color == HEAVY_WEAPON_COLOR {
-        if CheckWeapon(FLATLINE_PIXELS) {
+    } else if (check_point_color == HEAVY_WEAPON_COLOR) {
+        if (CheckWeapon(FLATLINE_PIXELS)) {
             current_weapon_type := FLATLINE_WEAPON_TYPE
             current_pattern := FLATLINE_PATTERN
             LogMessage("Weapon: Flatline")
-        } else if CheckWeapon(PROWLER_PIXELS) {
+        } else if (CheckWeapon(PROWLER_PIXELS)) {
             current_weapon_type := PROWLER_WEAPON_TYPE
             current_pattern := PROWLER_PATTERN
             LogMessage("Weapon: Prowler")
-        } else if CheckWeapon(RAMPAGE_PIXELS) {
+        } else if (CheckWeapon(RAMPAGE_PIXELS)) {
             current_weapon_type := RAMPAGE_WEAPON_TYPE
             current_pattern := RAMPAGE_PATTERN
             LogMessage("Weapon: Rampage")
-        } else if CheckWeapon(CAR_PIXELS) {
+        } else if (CheckWeapon(CAR_PIXELS)) {
             current_weapon_type := CAR_WEAPON_TYPE
             current_pattern := CAR_PATTERN
             LogMessage("Weapon: CAR")
-        } else if CheckWeapon(P3030_PIXELS) {
+        } else if (CheckWeapon(P3030_PIXELS)) {
             current_weapon_type := P3030_WEAPON_TYPE
             current_pattern := P3030_PATTERN
             LogMessage("Weapon: 3030")
-        } else if CheckWeapon(HEMLOK_PIXELS) {
+        } else if (CheckWeapon(HEMLOK_PIXELS)) {
             current_weapon_type := HEMLOK_WEAPON_TYPE
             current_pattern := HEMLOK_PATTERN
-            if is_single_mode {
+            if (is_single_mode) {
                 current_weapon_type := HEMLOK_SINGLE_WEAPON_TYPE
                 current_pattern := HEMLOK_SINGLE_PATTERN
             }
             LogMessage("Weapon: Hemlok")
         }
-    } else if check_point_color == ENERGY_WEAPON_COLOR {
-        if CheckWeapon(VOLT_PIXELS) {
+    } else if (check_point_color == ENERGY_WEAPON_COLOR) {
+        if (CheckWeapon(VOLT_PIXELS)) {
             current_weapon_type := VOLT_WEAPON_TYPE
             current_pattern := VOLT_PATTERN
             LogMessage("Weapon: Volt")
-        } else if CheckWeapon(DEVOTION_PIXELS) {
+        } else if (CheckWeapon(DEVOTION_PIXELS)) {
             current_weapon_type := DEVOTION_WEAPON_TYPE
             current_pattern := DEVOTION_PATTERN
-            if CheckTurbocharger(DEVOTION_TURBOCHARGER_PIXELS) {
+            if (CheckTurbocharger(DEVOTION_TURBOCHARGER_PIXELS)) {
                 current_pattern := TURBODEVOTION_PATTERN
                 current_weapon_type := DEVOTION_TURBO_WEAPON_TYPE
             }
             LogMessage("Weapon: Devotion")
-        } else if CheckWeapon(HAVOC_PIXELS) {
+        } else if (CheckWeapon(HAVOC_PIXELS)) {
             current_weapon_type := HAVOC_WEAPON_TYPE
             current_pattern := HAVOC_PATTERN
-            if CheckTurbocharger(HAVOC_TURBOCHARGER_PIXELS) {
+            if (CheckTurbocharger(HAVOC_TURBOCHARGER_PIXELS)) {
                 current_weapon_type := HAVOC_TURBO_WEAPON_TYPE
             }
             LogMessage("Weapon: Havoc")
-        } else if CheckWeapon(NEMESIS_PIXELS) {
+        } else if (CheckWeapon(NEMESIS_PIXELS)) {
             current_weapon_type := NEMESIS_WEAPON_TYPE
             current_pattern := NEMESIS_PATTERN
-            if IsNemesisFullCharge() {
+            if (IsNemesisFullCharge()) {
                 current_weapon_type := NEMESIS_CHARGED_WEAPON_TYPE
                 current_pattern := NEMESIS_CHARGED_PATTERN
             }
             LogMessage("Weapon: Nemesis")
-        } else if CheckWeapon(LSTAR_PIXELS) {
+        } else if (CheckWeapon(LSTAR_PIXELS)) {
             current_weapon_type := LSTAR_WEAPON_TYPE
             current_pattern := LSTAR_PATTERN
             LogMessage("Weapon: LSTAR")
         }
-    } else if check_point_color == SHOTGUN_WEAPON_COLOR {
+    } else if (check_point_color == SHOTGUN_WEAPON_COLOR) {
         current_weapon_type := SHOTGUN_WEAPON_TYPE
 		current_pattern := DEFAULT_PATTERN
         LogMessage("Weapon: SHOTGUN")
-    } else if check_point_color == SNIPER_WEAPON_COLOR {
+    } else if (check_point_color == SNIPER_WEAPON_COLOR) {
 		current_weapon_type := SNIPER_WEAPON_TYPE
 		current_pattern := DEFAULT_PATTERN
 		LogMessage("Weapon: Sniper")
-    } else if check_point_color == SUPPY_DROP_COLOR {
-        if CheckWeapon(R99_PIXELS) {
+    } else if (check_point_color == SUPPY_DROP_COLOR) {
+        if (CheckWeapon(R99_PIXELS)) {
             current_weapon_type := R99_WEAPON_TYPE
             current_pattern := R99_PATTERN
             LogMessage("Weapon: R99 from Supply Drop")
-        } else if CheckWeapon(DEVOTION_PIXELS) {
+        } else if (CheckWeapon(DEVOTION_PIXELS)) {
             current_weapon_type := DEVOTION_WEAPON_TYPE
             current_pattern := DEVOTION_PATTERN
-            if CheckTurbocharger(DEVOTION_TURBOCHARGER_PIXELS) {
+            if (CheckTurbocharger(DEVOTION_TURBOCHARGER_PIXELS)) {
                 current_pattern := TURBODEVOTION_PATTERN
                 current_weapon_type := DEVOTION_TURBO_WEAPON_TYPE
             }
@@ -883,39 +884,45 @@ MoveMouse() {
     LogMessage("LButton pressed. Starting checks.")
 
     ; Check if the mouse is visible or the weapon type should be ignored
-    if IsMouseShown() || current_weapon_type == DEFAULT_WEAPON_TYPE || current_weapon_type == SHOTGUN_WEAPON_TYPE || current_weapon_type == SNIPER_WEAPON_TYPE {
+    if (IsMouseShown() || current_weapon_type == DEFAULT_WEAPON_TYPE || current_weapon_type == SHOTGUN_WEAPON_TYPE || current_weapon_type == SNIPER_WEAPON_TYPE) {
         LogMessage("Mouse is shown or weapon type is ignored. Exiting.")
+        return
+    }
+	
+	; Check if current_pattern is empty
+    if (!current_pattern || current_pattern.Length() == 0) {
+        LogMessage("current_pattern is empty, exiting MoveMouse.")
         return
     }
 
     ; Check if single mode is active
-    if is_single_mode == "1" {
+    if (is_single_mode == "1") {
         LogMessage("Single mode is active. Exiting.")
         return
     }
 
     ; Check if ads_only is true and right mouse button isn't pressed
-    if ads_only == "1" && !GetKeyState("RButton") {
+    if (ads_only == "1" && !GetKeyState("RButton")) {
         LogMessage("ADS only is true and RButton not pressed. Exiting.")
         return
     }
 
     ; Check if trigger_only is true and the trigger button isn't pressed
-    if trigger_only == "1" && !GetKeyState(trigger_button, "T") {
+    if (trigger_only == "1" && !GetKeyState(trigger_button, "T")) {
         LogMessage("Trigger only is true and trigger button not pressed. Exiting.")
         return
     }
 
     ; Handle HAVOC_WEAPON_TYPE special delay
-    if current_weapon_type == HAVOC_WEAPON_TYPE {
+    if (current_weapon_type == HAVOC_WEAPON_TYPE) {
         LogMessage("Current weapon is HAVOC. Adding delay of 400ms.")
         Sleep(400)
     }
 
     ; Handle NEMESIS weapon behavior
-    if current_weapon_type == NEMESIS_WEAPON_TYPE || current_weapon_type == NEMESIS_CHARGED_WEAPON_TYPE {
+    if (current_weapon_type == NEMESIS_WEAPON_TYPE || current_weapon_type == NEMESIS_CHARGED_WEAPON_TYPE) {
         LogMessage("Current weapon is NEMESIS. Checking charge status.")
-        if IsNemesisFullCharge() {
+        if (IsNemesisFullCharge()) {
             current_weapon_type := NEMESIS_CHARGED_WEAPON_TYPE
             current_pattern := NEMESIS_CHARGED_PATTERN
             LogMessage("NEMESIS fully charged. Using charged pattern.")
@@ -937,14 +944,14 @@ MoveMouse() {
         interval := 20
 		
 		; If within current pattern, get the compensation values
-        if A_Index <= current_pattern.Length() {
+        if (A_Index <= current_pattern.Length()) {
             compensation := StrSplit(current_pattern[Min(A_Index, current_pattern.Length())], ",")
  
 			; Log the full compensation array for debug
 			LogMessage("Compensation Array: " compensation)
 
             ; If invalid compensation, exit the loop
-            if compensation.Length() < 3 {
+            if (compensation.Length() < 3) {
                 LogMessage("Invalid compensation found. Exiting.")
                 return
             }
@@ -971,7 +978,7 @@ MoveMouse() {
         Sleep(Round(interval))
 		
         ; Exit the loop if the left mouse button is no longer held
-        if !GetKeyState("LButton", "P") {
+        if (!GetKeyState("LButton", "P")) {
             LogMessage("LButton released. Exiting loop.")
             break
         }
