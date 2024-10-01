@@ -23,7 +23,7 @@ For example:
 
 Alternatively you can run the `run_apexmaster.bat`, but first just make sure you go into the file and change to the correct PATH then you can make a shortcut to your Desktop then right click on the shortcut -> go to `Show more options` -> `Properties` -> `Shortcut` -> `Advanced` -> `Run as administrator` -> `Ok` -> `Ok`
 
-## Note
+## Important Step
 
 Before running the script, make sure to modify the `settings.ini` file to match your current game setup. Below are the settings and their descriptions:
 
@@ -43,6 +43,10 @@ Before running the script, make sure to modify the `settings.ini` file to match 
 ### [trigger settings]
 - `trigger_only`: Set to `1` if you want the script to only activate on trigger press, `0` for it to be always active.
 - `trigger_button`: The key that activates the script (e.g., `Capslock`).
+
+## Don't forget this
+
+After you run it once and it's all working as expected, go into your settings.ini and make sure debug is set to `0`, otherwise your debug file will get really large really soon.
 
 ## Security Note
 
@@ -70,6 +74,7 @@ Alternatively, you can generate a UUID from a website such as [UUID Tools](https
 
 ## Todo
 
+- Bring back the gui.ahk
 - Improve recoil further
 - Bring back the rapid-fire feature and fix any issues with it
 - Fix Sheila
