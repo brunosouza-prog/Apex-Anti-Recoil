@@ -16,6 +16,7 @@ global zoom_sens := "1.0"
 global auto_fire := "1"
 global ads_only := "0"
 global debug := "1"
+global error_level := "error"
 global trigger_only := "0"
 global trigger_button := "Capslock"
 global tempFilePath := A_ScriptDir "\debug_log.txt"
@@ -29,6 +30,11 @@ FileAppend("Script Version " version "`n", tempFilePath)
 
 ; First, read the settings from the ini file
 ReadIni()
+
+; To avoid any issues, lets regenerate the UUID since it was moved into the settings.ini
+if (UUID == "") {
+    UUID := GenerateUUID()  ; Regenerate UUID
+}
 
 ; Make sure it runs as admin
 RunAsAdmin()
@@ -46,40 +52,47 @@ MyGui := Gui("New", "Apex NoRecoil Settings v" version)
 MyGui.SetFont("s24 wBold", "Verdana")
 MyGui.Add("Text", "Center w400", "Apex NoRecoil")
 
-; Add a UUID section with smaller font size
+; Add a UUID section with smaller font size and place "Regenerate UUID" button below it
 MyGui.SetFont("s10", "Verdana")
-MyGui.Add("Text", "Center w400", "UUID: " UUID)
+UUIDText := MyGui.Add("Text", "x20 y60 w350", "UUID: " UUID)  ; Display UUID
+MyGUIBtn := MyGui.Add("Button", "Center w190 h30", "Regenerate UUID")
 
 ; Add a separator for sectioning off parts of the GUI
-MyGui.Add("Text", "Center w400", "----------------------------------------")
+MyGui.Add("Text", "x20 y130 Center w400", "----------------------------------------")
 
-; Add Sensitivity Slider
+; Add Sensitivity Slider below the separator
 MyGui.SetFont("s10", "Verdana")
-MyGui.Add("Text", "x20 y120", "Mouse Sensitivity:")
-MySlider := MyGui.Add("Slider", "x150 y115 w200 range0-200 tickinterval1 vsens", slider_sen)
+MyGui.Add("Text", "x20 y160", "Mouse Sensitivity:")
+MySlider := MyGui.Add("Slider", "x150 y155 w200 range0-200 tickinterval1 vsens", slider_sen)
 MySlider.Value := slider_sen  ; Set the slider to reflect the current sensitivity value
 
-; Add toggle checkboxes (3 rows)
+; Add toggle checkboxes (2 rows)
 MyGui.SetFont("s10", "Verdana")
-MyGui.Add("CheckBox", "x20 y160 w100 vauto_fire", "Auto Fire").Value := auto_fire
-MyGui.Add("CheckBox", "x120 y160 w100 vads_only", "ADS Only").Value := ads_only
-MyGui.Add("CheckBox", "x220 y160 w100 vdebug", "Debug").Value := debug
+MyGui.Add("CheckBox", "x20 y200 w190 h25 vauto_fire", "Auto Fire").Value := auto_fire
+MyGui.Add("CheckBox", "x220 y200 w190 h25 vads_only", "ADS Only").Value := ads_only
+
+; Separate line for Debug checkbox
+MyGui.Add("CheckBox", "x20 y240 w100 h25 vdebug", "Debug").Value := debug
+
+; Error Level Dropdown (below Debug checkbox)
+MyGui.Add("Text", "x20 y280", "Error Level:")
+ErrorLevelDDL := MyGui.Add("DropDownList", "x150 y275 w100 verror_level Choose" ChooseItem(error_level), ["info", "error"])
 
 ; Trigger Mode on a separate row above Trigger Button
-MyGui.Add("CheckBox", "x20 y200 w150 vtrigger_only", "Trigger Mode").Value := trigger_only
-MyGui.Add("Text", "x20 y240", "Trigger Button:")
+MyGui.Add("CheckBox", "x20 y320 w150 h25 vtrigger_only", "Trigger Mode").Value := trigger_only
+MyGui.Add("Text", "x20 y360", "Trigger Button:")
 
 ; Dropdown for Trigger Button with pre-selection
-TriggerButtonDDL := MyGui.Add("DropDownList", "x150 y235 w100 vtrigger_button Choose" ChooseItem(trigger_button), ["Capslock", "NumLock", "ScrollLock"])
+TriggerButtonDDL := MyGui.Add("DropDownList", "x150 y355 w100 vtrigger_button Choose" ChooseItem(trigger_button), ["Capslock", "NumLock", "ScrollLock"])
 
 ; Add a dropdown for resolution settings with pre-selection
-MyGui.Add("Text", "x20 y280", "Resolution:")
+MyGui.Add("Text", "x20 y400", "Resolution:")
 resolutions := ["1280x720", "1366x768", "1600x900", "1920x1080", "2560x1440", "3840x2160", "customized"]
-ResolutionDDL := MyGui.Add("DropDownList", "x150 y275 w150 vresolution Choose" ChooseItem(resolution), resolutions)
+ResolutionDDL := MyGui.Add("DropDownList", "x150 y395 w150 vresolution Choose" ChooseItem(resolution), resolutions)
 
 ; Add Colorblind Mode dropdown with pre-selection
-MyGui.Add("Text", "x20 y320", "Colorblind Mode:")
-ColorblindDDL := MyGui.Add("DropDownList", "x150 y315 w150 vcolorblind Choose" ChooseItem(colorblind), ["Normal", "Protanopia", "Deuteranopia", "Tritanopia"])
+MyGui.Add("Text", "x20 y440", "Colorblind Mode:")
+ColorblindDDL := MyGui.Add("DropDownList", "x150 y435 w150 vcolorblind Choose" ChooseItem(colorblind), ["Normal", "Protanopia", "Deuteranopia", "Tritanopia"])
 
 ; Add Save and Run Button
 MyGui.SetFont("s12 wBold", "Verdana")
@@ -92,9 +105,18 @@ LogMessage("GUI initialization complete.")
 
 ; Event handling
 LogMessage("Adding Event handling...")
+MyGUIBtn.OnEvent("Click", (*) => RegenerateUUID(UUIDText))
 MyBtn.OnEvent("Click", (*) => btSave())
 MySlider.OnEvent("Change", (*) => Slide())
 MyGui.OnEvent("Close", (*) => GuiClose())
+
+; Function to regenerate UUID and update the GUI
+RegenerateUUID(UUIDText) {
+    global UUID
+    UUID := GenerateUUID()  ; Regenerate UUID
+    UUIDText.Text := "UUID: " UUID  ; Update UUID text in GUI
+    LogMessage("New UUID generated: " UUID)
+}
 
 Slide() {
     sens := MySlider.Value() / 10
@@ -103,6 +125,8 @@ Slide() {
 }
 
 btSave() {
+	global UUID ; Make sure it's visible
+	
     Saved := MyGui.Submit()
 	 
 	; Adjust the sensitivity value before saving
@@ -116,6 +140,8 @@ btSave() {
     IniWrite(Saved.trigger_only, "settings.ini", "trigger settings", "trigger_only")
     IniWrite(Saved.trigger_button, "settings.ini", "trigger settings", "trigger_button")
     IniWrite(Saved.debug, "settings.ini", "other settings", "debug")
+    IniWrite(Saved.error_level, "settings.ini", "other settings", "error_level")
+    IniWrite(UUID, "settings.ini", "other settings", "UUID")
 	
 	; Run KeySharp with apexmaster.ahk as a parameter
     keysharpPath := "Keysharp.exe" ; Adjust this path as needed
@@ -129,11 +155,30 @@ GuiClose() {
     ExitApp()
 }
 
+GenerateUUID() {
+    characters := "0123456789abcdef"  ; Hexadecimal characters
+    uuid := ""
+    
+    ; Generate the random UUID with hyphen positions at 9, 14, 19, 24
+    Loop 8
+        uuid .= SubStr(characters, Random(1, 16), 1)
+    Loop 4
+        uuid .= SubStr(characters, Random(1, 16), 1)
+    Loop 4
+        uuid .= SubStr(characters, Random(1, 16), 1)
+    Loop 4
+        uuid .= SubStr(characters, Random(1, 16), 1)
+    Loop 12
+        uuid .= SubStr(characters, Random(1, 16), 1)
+    
+    return uuid
+}
+
 ; Helper function to return Choose item index
 ChooseItem(currentValue) {
-    if (currentValue = "Capslock" or currentValue = "1280x720" or currentValue = "Normal") {
+    if (currentValue = "Capslock" or currentValue = "1280x720" or currentValue = "Normal" or currentValue = "info") {
         return 1
-    } else if (currentValue = "NumLock" or currentValue = "1366x768" or currentValue = "Protanopia") {
+    } else if (currentValue = "NumLock" or currentValue = "1366x768" or currentValue = "Protanopia" or currentValue = "error") {
         return 2
     } else if (currentValue = "ScrollLock" or currentValue = "1600x900" or currentValue = "Deuteranopia") {
         return 3
@@ -172,7 +217,7 @@ ActiveMonitorInfo(&X, &Y, &Width, &Height) {
 }
 
 ReadIni() {
-    global resolution, colorblind, zoom_sens, sens, auto_fire, ads_only, debug, trigger_only, trigger_button, version
+    global resolution, colorblind, zoom_sens, sens, auto_fire, ads_only, debug, error_level, trigger_only, trigger_button, version, UUID ; Make sure it's visible
     
     iniFilePath := A_ScriptDir "\settings.ini"
     
@@ -187,28 +232,33 @@ ReadIni() {
         IniWrite("1", iniFilePath, "mouse settings", "auto_fire")
         IniWrite("0", iniFilePath, "mouse settings", "ads_only")
         IniWrite("0", iniFilePath, "other settings", "debug")
+        IniWrite("error", iniFilePath, "other settings", "error_level")
+        IniWrite(GenerateUUID(), iniFilePath, "other settings", "UUID")
         IniWrite("0", iniFilePath, "trigger settings", "trigger_only")
         IniWrite("Capslock", iniFilePath, "trigger settings", "trigger_button")
         LogMessage("New settings.ini file created.")
     } else {
+		error_level := ReadIniValue(iniFilePath, "other settings", "error_level")
         debug := ReadIniValue(iniFilePath, "other settings", "debug")
-        LogMessage("settings.ini found. Reading settings.")
-        LogMessage("debug=" debug)
+		UUID := ReadIniValue(iniFilePath, "other settings", "UUID")
         resolution := ReadIniValue(iniFilePath, "screen settings", "resolution")
-        LogMessage("resolution=" resolution)
         colorblind := ReadIniValue(iniFilePath, "screen settings", "colorblind")
-        LogMessage("colorblind=" colorblind)
         zoom_sens := ReadIniValue(iniFilePath, "mouse settings", "zoom_sens")
-        LogMessage("zoom_sens=" zoom_sens)
         sens := ReadIniValue(iniFilePath, "mouse settings", "sens")
-        LogMessage("sens=" sens)
         auto_fire := ReadIniValue(iniFilePath, "mouse settings", "auto_fire")
-        LogMessage("auto_fire=" auto_fire)
         ads_only := ReadIniValue(iniFilePath, "mouse settings", "ads_only")
-        LogMessage("ads_only=" ads_only)
         trigger_only := ReadIniValue(iniFilePath, "trigger settings", "trigger_only")
-        LogMessage("trigger_only=" trigger_only)
         trigger_button := ReadIniValue(iniFilePath, "trigger settings", "trigger_button")
+        LogMessage("resolution=" resolution)
+        LogMessage("colorblind=" colorblind)
+        LogMessage("zoom_sens=" zoom_sens)
+        LogMessage("sens=" sens)
+        LogMessage("auto_fire=" auto_fire)
+        LogMessage("ads_only=" ads_only)
+		LogMessage("debug=" debug)
+        LogMessage("error_level=" error_level)
+        LogMessage("UUID=" UUID)
+        LogMessage("trigger_only=" trigger_only)
         LogMessage("trigger_button=" trigger_button)
     }
 }

@@ -26,12 +26,13 @@ global zoom_sens := "1.0"
 global auto_fire := "1" ; @TODO Bring it back auto_fire
 global ads_only := "0"
 global debug := "0"
+global error_level := "error"
 global trigger_only := "0"
 global trigger_button := "Capslock"
 global show_tooltip := "0"
 global tempFilePath := A_ScriptDir "\debug_log.txt"
 global hMod, hHook
-global UUID := "811e155bf4114204ae515ff9174ec383"
+global UUID := GenerateUUID() ; Start with a random UUID
 
 ; weapon type constant, mainly for debug
 global DEFAULT_WEAPON_TYPE := "DEFAULT"
@@ -113,6 +114,11 @@ FileAppend("Script Version "version "`n", tempFilePath)
 ; First, read the settings from the ini file
 ReadIni()
 
+; To avoid any issues, lets regenerate the UUID since it was moved into the settings.ini
+if (UUID == "") {
+    UUID := GenerateUUID()  ; Regenerate UUID
+}
+
 ; Make sure it run as admin
 RunAsAdmin()
 
@@ -191,16 +197,34 @@ RunAsAdmin() {
     ExitSub()
 }
 
-ReadIni() {
-	global resolution, colorblind, zoom_sens, sens, auto_fire, ads_only, debug, trigger_only, trigger_button, version ; Make sure it's visible
+GenerateUUID() {
+    characters := "0123456789abcdef"  ; Hexadecimal characters
+    uuid := ""
     
-	iniFilePath := A_ScriptDir "\settings.ini" ; Ensure the full path is being checked
+    ; Generate the random UUID with hyphen positions at 9, 14, 19, 24
+    Loop 8
+        uuid .= SubStr(characters, Random(1, 16), 1)
+    Loop 4
+        uuid .= SubStr(characters, Random(1, 16), 1)
+    Loop 4
+        uuid .= SubStr(characters, Random(1, 16), 1)
+    Loop 4
+        uuid .= SubStr(characters, Random(1, 16), 1)
+    Loop 12
+        uuid .= SubStr(characters, Random(1, 16), 1)
+    
+    return uuid
+}
+
+ReadIni() {
+    global resolution, colorblind, zoom_sens, sens, auto_fire, ads_only, debug, error_level, trigger_only, trigger_button, version, UUID ; Make sure it's visible
+    
+    iniFilePath := A_ScriptDir "\settings.ini"
     
     LogMessage("Checking if settings.ini exists at: " iniFilePath)
     
     if (!FileExist(iniFilePath)) {
         LogMessage("settings.ini not found. Creating a new one.")
-        MsgBox("v"version " - Couldn't find settings.ini. I'll create one for you.")
         IniWrite("1920x1080", iniFilePath, "screen settings", "resolution")
         IniWrite("Normal", iniFilePath, "screen settings", "colorblind")
         IniWrite("5.0", iniFilePath, "mouse settings", "sens")
@@ -208,31 +232,34 @@ ReadIni() {
         IniWrite("1", iniFilePath, "mouse settings", "auto_fire")
         IniWrite("0", iniFilePath, "mouse settings", "ads_only")
         IniWrite("0", iniFilePath, "other settings", "debug")
+        IniWrite("error", iniFilePath, "other settings", "error_level")
+        IniWrite(GenerateUUID(), iniFilePath, "other settings", "UUID")
         IniWrite("0", iniFilePath, "trigger settings", "trigger_only")
         IniWrite("Capslock", iniFilePath, "trigger settings", "trigger_button")
         LogMessage("New settings.ini file created.")
-        MsgBox("v"version " - The settings.ini file was created, open it and make sure the settings match your in-game settings.")
-		ExitSub()
     } else {
-		debug := ReadIniValue(iniFilePath, "other settings", "debug")
-        LogMessage("settings.ini found. Reading settings.")
+		error_level := ReadIniValue(iniFilePath, "other settings", "error_level")
+        debug := ReadIniValue(iniFilePath, "other settings", "debug")
+		UUID := ReadIniValue(iniFilePath, "other settings", "UUID")
+        resolution := ReadIniValue(iniFilePath, "screen settings", "resolution")
+        colorblind := ReadIniValue(iniFilePath, "screen settings", "colorblind")
+        zoom_sens := ReadIniValue(iniFilePath, "mouse settings", "zoom_sens")
+        sens := ReadIniValue(iniFilePath, "mouse settings", "sens")
+        auto_fire := ReadIniValue(iniFilePath, "mouse settings", "auto_fire")
+        ads_only := ReadIniValue(iniFilePath, "mouse settings", "ads_only")
+        trigger_only := ReadIniValue(iniFilePath, "trigger settings", "trigger_only")
+        trigger_button := ReadIniValue(iniFilePath, "trigger settings", "trigger_button")
+        LogMessage("resolution=" resolution)
+        LogMessage("colorblind=" colorblind)
+        LogMessage("zoom_sens=" zoom_sens)
+        LogMessage("sens=" sens)
+        LogMessage("auto_fire=" auto_fire)
+        LogMessage("ads_only=" ads_only)
 		LogMessage("debug=" debug)
-		resolution := ReadIniValue(iniFilePath, "screen settings", "resolution")
-		LogMessage("resolution=" resolution)
-		colorblind := ReadIniValue(iniFilePath, "screen settings", "colorblind")
-		LogMessage("colorblind=" colorblind)
-		zoom_sens := ReadIniValue(iniFilePath, "mouse settings", "zoom_sens")
-		LogMessage("zoom_sens=" zoom_sens)
-		sens := ReadIniValue(iniFilePath, "mouse settings", "sens")
-		LogMessage("sens=" sens)
-		auto_fire := ReadIniValue(iniFilePath, "mouse settings", "auto_fire")
-		LogMessage("auto_fire=" auto_fire)
-		ads_only := ReadIniValue(iniFilePath, "mouse settings", "ads_only")
-		LogMessage("ads_only=" ads_only)
-		trigger_only := ReadIniValue(iniFilePath, "trigger settings", "trigger_only")
-		LogMessage("trigger_only=" trigger_only)
-		trigger_button := ReadIniValue(iniFilePath, "trigger settings", "trigger_button")
-		LogMessage("trigger_button=" trigger_button)
+        LogMessage("error_level=" error_level)
+        LogMessage("UUID=" UUID)
+        LogMessage("trigger_only=" trigger_only)
+        LogMessage("trigger_button=" trigger_button)
     }
 }
 
@@ -247,7 +274,7 @@ ReadIniValue(iniFilePath, section, key) {
         if (value != "")
             LogMessage("Manual read success for " key ": " value)
         else
-            LogMessage("[ERROR] Manual read failed for " key)
+            LogMessage("Manual read failed for " key, "error")
     }
 	
     ; Remove extra quotation marks and ensure the value is returned as a string
@@ -375,15 +402,13 @@ HideProcess() {
 
         ; If the hook was not set successfully, terminate the script
         if (!hHook) {
-            LogMessage("[ERROR] SetWindowsHookEx failed. Exiting the script.")
-            MsgBox("v"version " - [ERROR] SetWindowsHookEx failed!`nScript will now terminate!")
+            LogMessage("SetWindowsHookEx failed. Exiting the script.", "error")
             ExitSub()
         } else {
             LogMessage("SetWindowsHookEx succeeded. Hook set.")
         }
     } else {
-        LogMessage("[ERROR] LoadLibrary failed. Exiting the script.")
-        MsgBox("v"version " - [ERROR] LoadLibrary failed!`nScript will now terminate!")
+        LogMessage("LoadLibrary failed. Exiting the script.", "error")
         ExitSub()
     }
 
@@ -403,8 +428,7 @@ LoadPixel(name) {
 
     ; Check if the .ini file exists before reading
     if (!FileExist(iniFilePath)) {
-        LogMessage("[ERROR] File not found: " iniFilePath)
-        MsgBox("v"version " - [ERROR] File not found: " iniFilePath)
+        LogMessage("File not found: " iniFilePath, "error")
         ExitSub()
     }
 
@@ -441,7 +465,7 @@ LoadPixel(name) {
             }
         }
     } else {
-        LogMessage("[ERROR] No pixel data found for " name)
+        LogMessage("No pixel data found for " name, "error")
     }
 
     ; Log the final pixel array
@@ -460,7 +484,7 @@ ManualIniRead(iniFilePath, section, key) {
     if (content) {
         LogMessage("File content successfully read.")
     } else {
-        LogMessage("[ERROR] Failed to read file content.")
+        LogMessage("Failed to read file content.", "error")
         return ""
     }
 
@@ -487,7 +511,7 @@ ManualIniRead(iniFilePath, section, key) {
     }
 
     ; Log if the section or key was not found
-    LogMessage("[ERROR] Section [" section "] or key " key " not found in the file.")
+    LogMessage("Section [" section "] or key " key " not found in the file.", "error")
     return ""
 }
 
@@ -693,18 +717,29 @@ ExitSub() {
     ExitApp
 }
 
-LogMessage(message) {
-	global debug, tempFilePath, version  ; Ensure they are accessible
-	
+LogMessage(message, message_level := "info") {
+    global debug, tempFilePath, version, error_level  ; Ensure they are accessible
+    
+    ; Define the hierarchy of log levels
+    level_rank := { "info": 1, "error": 2 }
+
+    ; If the message level is lower than the global error level, do not log
+    if (level_rank[message_level] < level_rank[error_level]) {
+        return  ; Exit the function without logging
+    }
+    
+    ; Proceed with logging if the message level is sufficient
     if (debug == "1") {
         try {
             if (!FileExist(tempFilePath)) {  ; Check if log file exists
                 FileAppend("", tempFilePath)  ; Create it if not
             }
+            ; Dynamically prepend the error level
+            log_entry := "v" version " - [" message_level "] " message "`n"
             ; Append the message to the log file
-            FileAppend("v"version " - " message "`n", tempFilePath)
+            FileAppend(log_entry, tempFilePath)
         } catch {
-            MsgBox("v"version " - Error writing to log file")
+            MsgBox("v" version " - Error writing to log file")
         }
     }
 }
@@ -937,51 +972,55 @@ MoveMouse() {
 	LogMessage("Current Pattern: " current_pattern)
 	LogMessage("Current Pattern Length: " current_pattern.Length())
 
-    ; Loop to manage recoil compensation
-    Loop {
-        x := 0
-        y := 0
-        interval := 20
-		
-		; If within current pattern, get the compensation values
-        if (A_Index <= current_pattern.Length()) {
-            compensation := StrSplit(current_pattern[Min(A_Index, current_pattern.Length())], ",")
- 
-			; Log the full compensation array for debug
-			LogMessage("Compensation Array: " compensation)
+	; Loop to manage recoil compensation with try-catch for error handling
+    try {
+		Loop {
+			x := 0
+			y := 0
+			interval := 20
+			
+			; If within current pattern, get the compensation values
+			if (A_Index <= current_pattern.Length()) {
+				compensation := StrSplit(current_pattern[Min(A_Index, current_pattern.Length())], ",")
+	 
+				; Log the full compensation array for debug
+				LogMessage("Compensation Array: " compensation)
 
-            ; If invalid compensation, exit the loop
-            if (compensation.Length() < 3) {
-                LogMessage("Invalid compensation found. Exiting.")
-                return
-            }
+				; If invalid compensation, exit the loop
+				if (compensation.Length() < 3) {
+					LogMessage("Invalid compensation found. Exiting.")
+					return
+				}
 
-            x := compensation[1]
-            y := compensation[2]
-            interval := compensation[3]
+				x := compensation[1]
+				y := compensation[2]
+				interval := compensation[3]
 
-            LogMessage("Recoil compensation - X: " x ", Y: " y ", Interval: " interval)
-        }
-		
-		; Apply the recoil compensation with DllCall to mouse_event
-        DllCall("mouse_event", "UInt", 0x01, "Int", Round(x * modifier), "Int", Round(y * modifier))
-        LogMessage("Mouse event called with X: " Round(x * modifier) ", Y: " Round(y * modifier))
-		
-		; Show tooltip if debug is enabled
-        if (debug == "1") {
-            ShowToolTip(x " " y " " A_Index)
-            LogMessage("Tooltip shown for recoil X: " x ", Y: " y ", Index: " A_Index)
-        }
-		
-		; Wait for the interval before applying the next step in the recoil pattern
-        LogMessage("Sleeping for " interval "ms.")
-        Sleep(Round(interval))
-		
-        ; Exit the loop if the left mouse button is no longer held
-        if (!GetKeyState("LButton", "P")) {
-            LogMessage("LButton released. Exiting loop.")
-            break
-        }
+				LogMessage("Recoil compensation - X: " x ", Y: " y ", Interval: " interval)
+			}
+			
+			; Apply the recoil compensation with DllCall to mouse_event
+			DllCall("mouse_event", "UInt", 0x01, "Int", Round(x * modifier), "Int", Round(y * modifier))
+			LogMessage("Mouse event called with X: " Round(x * modifier) ", Y: " Round(y * modifier))
+			
+			; Show tooltip if debug is enabled
+			if (debug == "1") {
+				ShowToolTip(x " " y " " A_Index)
+				LogMessage("Tooltip shown for recoil X: " x ", Y: " y ", Index: " A_Index)
+			}
+			
+			; Wait for the interval before applying the next step in the recoil pattern
+			LogMessage("Sleeping for " interval "ms.")
+			Sleep(Round(interval))
+			
+			; Exit the loop if the left mouse button is no longer held
+			if (!GetKeyState("LButton", "P")) {
+				LogMessage("LButton released. Exiting loop.")
+				break
+			}
+		}
+	} catch {
+        LogMessage("Error occurred in recoil compensation loop", "error")
     }
     return
 }

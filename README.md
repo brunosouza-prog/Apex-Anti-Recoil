@@ -39,6 +39,8 @@ Below are the settings and their descriptions:
 
 ### [other settings]
 - `debug`: Set to `1` to enable debug mode for troubleshooting, `0` to disable.
+- `error_level`: Set to `error` to save log error logs, `info` to save all the logs.
+- `UUID`: Your universally unique identifier.
 
 ### [trigger settings]
 - `trigger_only`: Set to `1` if you want the script to only activate on trigger press, `0` for it to be always active.
@@ -46,23 +48,15 @@ Below are the settings and their descriptions:
 
 ## Don't forget this
 
-After you run it once and it's all working as expected, make sure debug is disabled or set to `0`, otherwise your debug file will get really large really soon.
-
-## Security Note
-
-To avoid your process being detected, run the Python script to generate a unique UUID using the following command:
-
-```
-python uuid_generator.py
-```
-
-Alternatively, you can generate a UUID from a website such as [UUID Tools](https://www.uuidtools.com/v4). Copy the generated UUID remove the extra `-` and paste it into the `apexmaster.ahk` and `gui.ahk` files where it says `global UUID :=`.
+After you run it once and it's all working as expected, make sure debug is disabled using the `gui.ahk` UI or set to `0` in the `gui.ahk` and `apexmaster.ahk` files, otherwise your debug file will get really large really soon.
 
 ## My Changes
 
 - Reorganized and removed some stuff
 - Updated original AHK to work using KeySharp
 - Added Devo and R99 to supply for the new season and updated the pattern
+- Moved UUID to settings.ini
+- Created a UUID function to help creating a new UUID and not use the python script
 
 ## Previous Changes by Lew29
 
