@@ -23,8 +23,8 @@ global resolution := "1920x1080"
 global colorblind := "Normal"
 global sens := "5.0"
 global zoom_sens := "1.0"
-global auto_fire := "1" ; @TODO Bring it back auto_fire
-global ads_only := "0"
+global auto_fire := "0"
+global ads_only := "1"
 global debug := "0"
 global error_level := "error"
 global trigger_only := "0"
@@ -50,7 +50,6 @@ global NEMESIS_WEAPON_TYPE := "NEMESIS"
 global NEMESIS_CHARGED_WEAPON_TYPE := "NEMESIS CHARGED"
 global PROWLER_WEAPON_TYPE := "PROWLER"
 global HEMLOK_WEAPON_TYPE := "HEMLOK"
-global HEMLOK_SINGLE_WEAPON_TYPE := "HEMLOK SINGLE"
 global RE45_WEAPON_TYPE := "RE45"
 global ALTERNATOR_WEAPON_TYPE := "ALTERNATOR"
 global P2020_WEAPON_TYPE := "P2020"
@@ -58,10 +57,10 @@ global RAMPAGE_WEAPON_TYPE := "RAMPAGE"
 global G7_WEAPON_TYPE := "G7"
 global CAR_WEAPON_TYPE := "CAR"
 global P3030_WEAPON_TYPE := "3030"
-global SHOTGUN_WEAPON_TYPE := "shotgun"
-global SNIPER_WEAPON_TYPE := "sniper"
-global PEACEKEEPER_WEAPON_TYPE := "peacekeeper"
-global SHEILA_WEAPON_TYPE := "shiela"
+global SHOTGUN_WEAPON_TYPE := "SHOTGUN"
+global SNIPER_WEAPON_TYPE := "SNIPER"
+global PEACEKEEPER_WEAPON_TYPE := "PEACEKEEPER"
+global SHEILA_WEAPON_TYPE := "SHIELA"
 
 ; x, y pos for weapon1 and weapon 2
 global WEAPON_1_PIXELS, WEAPON_2_PIXELS
@@ -87,7 +86,7 @@ global R99_PIXELS, ALTERNATOR_PIXELS, R301_PIXELS, P2020_PIXELS, RE45_PIXELS, G7
 global FLATLINE_PIXELS, PROWLER_PIXELS, RAMPAGE_PIXELS, P3030_PIXELS, CAR_PIXELS
 global DEVOTION_PIXELS, HAVOC_PIXELS, VOLT_PIXELS, NEMESIS_PIXELS
 global HEMLOK_PIXELS, LSTAR_PIXELS, HAVOC_TURBOCHARGER_PIXELS, DEVOTION_TURBOCHARGER_PIXELS
-global NEMESIS_FULL_CHARGE_PIXELS, SINGLE_MODE_PIXELS, PEACEKEEPER_PIXELS
+global NEMESIS_FULL_CHARGE_PIXELS, SINGLE_MODE_PIXELS, PEACEKEEPER_PIXELS, CHARGED_MODE_PIXELS
 
 global DEFAULT_PATTERN = ["0,0,0"]
 
@@ -141,20 +140,52 @@ global modifier := 4/sens*zoom
 ; Load the weapon patterns
 LoadWeaponPatterns()
 
+; Declare the weapon_check_map globally so it's initialized once
+global weapon_check_map := {
+    "light_weapon_color": [
+        {weapon: "R301", pixels: R301_PIXELS, pattern: R301_PATTERN},
+        {weapon: "R99", pixels: R99_PIXELS, pattern: R99_PATTERN},
+        {weapon: "P2020", pixels: P2020_PIXELS, pattern: P2020_PATTERN},
+        {weapon: "RE45", pixels: RE45_PIXELS, pattern: RE45_PATTERN},
+        {weapon: "ALTERNATOR", pixels: ALTERNATOR_PIXELS, pattern: ALTERNATOR_PATTERN},
+        {weapon: "CAR", pixels: CAR_PIXELS, pattern: CAR_PATTERN},
+        {weapon: "G7", pixels: G7_PIXELS, pattern: G7_PATTERN},
+        {weapon: "SPITFIRE", pixels: SPITFIRE_PIXELS, pattern: SPITFIRE_PATTERN}
+    ],
+    "heavy_weapon_color": [
+        {weapon: "FLATLINE", pixels: FLATLINE_PIXELS, pattern: FLATLINE_PATTERN},
+        {weapon: "PROWLER", pixels: PROWLER_PIXELS, pattern: PROWLER_PATTERN},
+        {weapon: "RAMPAGE", pixels: RAMPAGE_PIXELS, pattern: RAMPAGE_PATTERN, charged_pattern: RAMPAGEAMP_PATTERN},
+        {weapon: "CAR", pixels: CAR_PIXELS, pattern: CAR_PATTERN},
+        {weapon: "HEMLOK", pixels: HEMLOK_PIXELS, pattern: HEMLOK_PATTERN, single_mode: HEMLOK_SINGLE_PATTERN},
+        {weapon: "3030", pixels: P3030_PIXELS, pattern: P3030_PATTERN}
+    ],
+    "energy_weapon_color": [
+        {weapon: "VOLT", pixels: VOLT_PIXELS, pattern: VOLT_PATTERN},
+        {weapon: "DEVOTION", pixels: DEVOTION_PIXELS, pattern: DEVOTION_PATTERN, turbo_pixels: DEVOTION_TURBOCHARGER_PIXELS, turbo_pattern: TURBODEVOTION_PATTERN},
+        {weapon: "HAVOC", pixels: HAVOC_PIXELS, pattern: HAVOC_PATTERN, turbo_pixels: HAVOC_TURBOCHARGER_PIXELS},
+        {weapon: "NEMESIS", pixels: NEMESIS_PIXELS, pattern: NEMESIS_PATTERN, charged_pattern: NEMESIS_CHARGED_PATTERN},
+        {weapon: "LSTAR", pixels: LSTAR_PIXELS, pattern: LSTAR_PATTERN}
+    ],
+	"sheila_weapon_color": [
+        {weapon: "SHIELA", pattern: SHEILA_PATTERN},
+	]
+}
+
 ; Now hide the process
 HideProcess()
 
 ~$*E Up::
-    Sleep(300)
-    DetectAndSetWeapon()
-return
-
 ~$*WheelDown::
 ~$*1::
 ~$*2::
-~$*B::
 ~$*R::
-    Sleep(500)
+    Sleep(100)
+    DetectAndSetWeapon()
+return
+
+~$*B Up::
+    Sleep(1000)
     DetectAndSetWeapon()
 return
 
@@ -181,7 +212,11 @@ return
 
 ~$*LButton::
 {
-	MoveMouse()
+    try {
+        MoveMouse()
+    } catch {
+        LogMessage("Error occurred during LButton hotkey handler.", "error")
+    }
 }
 
 RunAsAdmin() {
@@ -287,7 +322,7 @@ LoadWeaponPixels() {
 	global FLATLINE_PIXELS, PROWLER_PIXELS, RAMPAGE_PIXELS, P3030_PIXELS, CAR_PIXELS
 	global DEVOTION_PIXELS, HAVOC_PIXELS, VOLT_PIXELS, NEMESIS_PIXELS
 	global HEMLOK_PIXELS, LSTAR_PIXELS, HAVOC_TURBOCHARGER_PIXELS, DEVOTION_TURBOCHARGER_PIXELS
-	global NEMESIS_FULL_CHARGE_PIXELS, SINGLE_MODE_PIXELS, PEACEKEEPER_PIXELS
+	global NEMESIS_FULL_CHARGE_PIXELS, SINGLE_MODE_PIXELS, PEACEKEEPER_PIXELS, CHARGED_MODE_PIXELS
 	global WEAPON_1_PIXELS, WEAPON_2_PIXELS
     LogMessage("Loading weapon pixels...")
 	
@@ -326,6 +361,9 @@ LoadWeaponPixels() {
 	
     ; Load Nemesis full charge and single mode pixels
     SINGLE_MODE_PIXELS := LoadPixel("single_mode")
+	
+    ; Load Rampage charged mode pixels
+	CHARGED_MODE_PIXELS := LoadPixel("rampage_charged")
 
     ; Load shotgun pixels
     PEACEKEEPER_PIXELS := LoadPixel("peacekeeper")
@@ -591,7 +629,16 @@ SetShiela() {
 }
 
 CheckSingleMode() {
-    return false ; @TODO Bring it back auto_fire
+    global SINGLE_MODE_PIXELS
+
+    target_color := "0xFFFFFF"
+	
+    check_point_color := PixelGetColor(SINGLE_MODE_PIXELS[1], SINGLE_MODE_PIXELS[2])
+    
+	if (check_point_color == target_color) {
+        return true
+    }
+    return false
 }
 
 CheckWeapon(weapon_pixels) {
@@ -607,6 +654,19 @@ CheckWeapon(weapon_pixels) {
         i += 3
     }
     return true
+}
+
+CheckRampageCharged() {
+    global CHARGED_MODE_PIXELS
+
+    target_color := "0xEA9C42"
+		
+    check_point_color := PixelGetColor(CHARGED_MODE_PIXELS[1], CHARGED_MODE_PIXELS[2])
+	    
+	if (check_point_color == target_color) {
+        return true
+    }
+    return false
 }
 
 CheckTurbocharger(turbocharger_pixels) {
@@ -627,8 +687,8 @@ IsNemesisFullCharge() {
 }
 
 IsValidWeaponColor(weapon_color) {
-	global LIGHT_WEAPON_COLOR, HEAVY_WEAPON_COLOR, SNIPER_WEAPON_COLOR, ENERGY_WEAPON_COLOR, SUPPY_DROP_COLOR, SHOTGUN_WEAPON_COLOR ; Make sure it's visible
-	
+    global LIGHT_WEAPON_COLOR, HEAVY_WEAPON_COLOR, SNIPER_WEAPON_COLOR, ENERGY_WEAPON_COLOR, SUPPY_DROP_COLOR, SHOTGUN_WEAPON_COLOR, SHEILA_WEAPON_COLOR ; Make sure it's visible
+    	
     ; Log the current weapon color being checked
     LogMessage("Checking weapon color: " weapon_color)
     
@@ -639,26 +699,35 @@ IsValidWeaponColor(weapon_color) {
     LogMessage("ENERGY_WEAPON_COLOR: " ENERGY_WEAPON_COLOR)
     LogMessage("SUPPY_DROP_COLOR: " SUPPY_DROP_COLOR)
     LogMessage("SHOTGUN_WEAPON_COLOR: " SHOTGUN_WEAPON_COLOR)
-
+    LogMessage("SHEILA_WEAPON_COLOR: " SHEILA_WEAPON_COLOR)
+	
     ; Check if the weapon color matches any of the predefined valid colors
-    valid := weapon_color == LIGHT_WEAPON_COLOR 
-        || weapon_color == HEAVY_WEAPON_COLOR 
-        || weapon_color == SNIPER_WEAPON_COLOR 
-        || weapon_color == ENERGY_WEAPON_COLOR 
-        || weapon_color == SUPPY_DROP_COLOR 
-        || weapon_color == SHOTGUN_WEAPON_COLOR
-
-    ; Log whether the weapon color is valid or not
-    if (valid) {
-        LogMessage("Weapon color " weapon_color " is valid.")
+    if (weapon_color == LIGHT_WEAPON_COLOR) {
+		LogMessage("Weapon color " weapon_color " is valid.")
+        return {valid: true, color_name: "light_weapon_color"}
+    } else if (weapon_color == HEAVY_WEAPON_COLOR) {
+		LogMessage("Weapon color " weapon_color " is valid.")
+        return {valid: true, color_name: "heavy_weapon_color"}
+    } else if (weapon_color == SNIPER_WEAPON_COLOR) {
+		LogMessage("Weapon color " weapon_color " is valid.")
+        return {valid: true, color_name: "sniper_weapon_color"}
+    } else if (weapon_color == ENERGY_WEAPON_COLOR) {
+		LogMessage("Weapon color " weapon_color " is valid.")
+        return {valid: true, color_name: "energy_weapon_color"}
+    } else if (weapon_color == SUPPY_DROP_COLOR) {
+		LogMessage("Weapon color " weapon_color " is valid.")
+        return {valid: true, color_name: "supply_drop_color"}
+    } else if (weapon_color == SHOTGUN_WEAPON_COLOR) {
+		LogMessage("Weapon color " weapon_color " is valid.")
+        return {valid: true, color_name: "shotgun_weapon_color"}
+    } else if (weapon_color == SHEILA_WEAPON_COLOR) {
+		LogMessage("Weapon color " weapon_color " is valid.")
+        return {valid: true, color_name: "sheila_weapon_color"}
     } else {
-        LogMessage("Weapon color " weapon_color " is not valid.")
+		LogMessage("Weapon color " weapon_color " is not valid.")
+        return {valid: false, color_name: ""}
     }
-
-    return valid
 }
-
-
 
 IsMouseShown() {
     StructSize := A_PtrSize + 16
@@ -744,154 +813,105 @@ LogMessage(message, message_level := "info") {
     }
 }
 
-DetectAndSetWeapon() {
-	global current_pattern, current_weapon_type ; Make sure it's visible
-	global WEAPON_1_PIXELS, WEAPON_2_PIXELS
+; Check weapons using global weapon_check_map
+CheckWeapons(weapon_list) {
+	global current_pattern, current_weapon_type, is_single_mode
 	
+	LogMessage("CheckWeapons called", "info")
+	
+	for weapon_data in weapon_list {	
+		; Check if it's Sheila
+		if (weapon_data.weapon = "SHIELA") {
+			current_weapon_type := weapon_data.weapon
+			current_pattern := weapon_data.pattern
+			LogMessage("Weapon: " weapon_data.weapon, "info")
+			return true  ; Exit once a match is found
+		} else if (CheckWeapon(weapon_data.pixels)) {
+			current_weapon_type := weapon_data.weapon
+			current_pattern := weapon_data.pattern
+			LogMessage("Weapon: " weapon_data.weapon, "info")
+			
+			; Special case for turbo or single mode
+			if (weapon_data.HasProp("turbo_pixels") && CheckTurbocharger(weapon_data.turbo_pixels)) {
+				current_pattern := weapon_data.turbo_pattern
+				LogMessage("Weapon with turbo: " weapon_data.weapon, "info")
+			} else if (weapon_data.HasProp("single_mode") && is_single_mode) {
+				current_pattern := weapon_data.single_mode
+				LogMessage("Weapon in single mode: " weapon_data.weapon, "info")
+			} else if (weapon_data.weapon = "RAMPAGE" && CheckRampageCharged()) {
+				current_pattern := weapon_data.charged_pattern
+				LogMessage("Weapon in charged mode: " weapon_data.weapon, "info")
+			}
+			return true  ; Exit once a match is found
+		}
+	}
+	return false
+}
+
+IsAutoClickNeeded() {
+    global auto_fire, current_weapon_type
+	
+    return ((auto_fire == "1") && (current_weapon_type == HEMLOK_WEAPON_TYPE || current_weapon_type == R301_WEAPON_TYPE))
+}
+	
+DetectAndSetWeapon() {
+    global current_pattern, current_weapon_type, weapon_check_map
+    global WEAPON_1_PIXELS, WEAPON_2_PIXELS
+    global LIGHT_WEAPON_COLOR, HEAVY_WEAPON_COLOR, ENERGY_WEAPON_COLOR
+    global SHOTGUN_WEAPON_COLOR, SNIPER_WEAPON_COLOR, SUPPY_DROP_COLOR
+	global is_single_mode
+
     LogMessage("DetectAndSetWeapon called")
 
     Reset()
 
-    if (IsShiela()) {
-        SetShiela()
-        LogMessage("Weapon: Sheila detected")
-        return
-    }
-
     is_single_mode := CheckSingleMode()
-    LogMessage("Single mode: " . is_single_mode)
+    LogMessage("Single mode: " . is_single_mode, "info")
 
     ; First, check which weapon is active
     weapon1_color := PixelGetColor(WEAPON_1_PIXELS[1], WEAPON_1_PIXELS[2])
     weapon2_color := PixelGetColor(WEAPON_2_PIXELS[1], WEAPON_2_PIXELS[2])
 
-    LogMessage("Weapon 1 Color: " . weapon1_color)
-    LogMessage("Weapon 2 Color: " . weapon2_color)
+    LogMessage("Weapon 1 Color: " . weapon1_color, "info")
+    LogMessage("Weapon 2 Color: " . weapon2_color, "info")
 
-    if (IsValidWeaponColor(weapon1_color)) {
+    ; Check if the weapon color is valid and get the associated color name
+    weapon_check := IsValidWeaponColor(weapon1_color)
+    if (weapon_check.valid) {
         check_point_color := weapon1_color
         current_weapon_num := 1
-        LogMessage("Weapon 1 is valid")
-    } else if (IsValidWeaponColor(weapon2_color)) {
-        check_point_color := weapon2_color
-        current_weapon_num := 2
-        LogMessage("Weapon 2 is valid")
+        LogMessage("Weapon 1 is valid", "info")
     } else {
-        LogMessage("No valid weapon color found")
+        weapon_check := IsValidWeaponColor(weapon2_color)
+        if (weapon_check.valid) {
+            check_point_color := weapon2_color
+            current_weapon_num := 2
+            LogMessage("Weapon 2 is valid", "info")
+        } else {
+            LogMessage("No valid weapon color found", "error")
+            return
+        }
+    }
+
+    ; Use the color name to look up the appropriate weapons
+    if (weapon_check_map.HasProp(weapon_check.color_name) && CheckWeapons(weapon_check_map[weapon_check.color_name])) {
         return
     }
 
-    ; Then, check the weapon type
-    if (check_point_color == LIGHT_WEAPON_COLOR) {
-        if (CheckWeapon(R301_PIXELS)) {
-            current_weapon_type := R301_WEAPON_TYPE
-            current_pattern := R301_PATTERN
-            LogMessage("Weapon: R301")
-        } else if (CheckWeapon(R99_PIXELS)) {
-            current_weapon_type := R99_WEAPON_TYPE
-            current_pattern := R99_PATTERN
-            LogMessage("Weapon: R99")
-        } else if (CheckWeapon(P2020_PIXELS)) {
-            current_weapon_type := P2020_WEAPON_TYPE
-            current_pattern := P2020_PATTERN
-            LogMessage("Weapon: P2020")
-        } else if (CheckWeapon(RE45_PIXELS)) {
-            current_weapon_type := RE45_WEAPON_TYPE
-            current_pattern := RE45_PATTERN
-            LogMessage("Weapon: RE45")
-        } else if (CheckWeapon(ALTERNATOR_PIXELS)) {
-            current_weapon_type := ALTERNATOR_WEAPON_TYPE
-            current_pattern := ALTERNATOR_PATTERN
-            LogMessage("Weapon: Alternator")
-        } else if (CheckWeapon(CAR_PIXELS)) {
-            current_weapon_type := CAR_WEAPON_TYPE
-            current_pattern := CAR_PATTERN
-            LogMessage("Weapon: CAR")
-        } else if (CheckWeapon(G7_PIXELS)) {
-            current_weapon_type := G7_WEAPON_TYPE
-            current_pattern := G7_PATTERN
-            LogMessage("Weapon: G7")
-        } else if (CheckWeapon(SPITFIRE_PIXELS)) {
-            current_weapon_type := SPITFIRE_WEAPON_TYPE
-            current_pattern := SPITFIRE_PATTERN
-            LogMessage("Weapon: Spitfire")
-        }
-    } else if (check_point_color == HEAVY_WEAPON_COLOR) {
-        if (CheckWeapon(FLATLINE_PIXELS)) {
-            current_weapon_type := FLATLINE_WEAPON_TYPE
-            current_pattern := FLATLINE_PATTERN
-            LogMessage("Weapon: Flatline")
-        } else if (CheckWeapon(PROWLER_PIXELS)) {
-            current_weapon_type := PROWLER_WEAPON_TYPE
-            current_pattern := PROWLER_PATTERN
-            LogMessage("Weapon: Prowler")
-        } else if (CheckWeapon(RAMPAGE_PIXELS)) {
-            current_weapon_type := RAMPAGE_WEAPON_TYPE
-            current_pattern := RAMPAGE_PATTERN
-            LogMessage("Weapon: Rampage")
-        } else if (CheckWeapon(CAR_PIXELS)) {
-            current_weapon_type := CAR_WEAPON_TYPE
-            current_pattern := CAR_PATTERN
-            LogMessage("Weapon: CAR")
-        } else if (CheckWeapon(P3030_PIXELS)) {
-            current_weapon_type := P3030_WEAPON_TYPE
-            current_pattern := P3030_PATTERN
-            LogMessage("Weapon: 3030")
-        } else if (CheckWeapon(HEMLOK_PIXELS)) {
-            current_weapon_type := HEMLOK_WEAPON_TYPE
-            current_pattern := HEMLOK_PATTERN
-            if (is_single_mode) {
-                current_weapon_type := HEMLOK_SINGLE_WEAPON_TYPE
-                current_pattern := HEMLOK_SINGLE_PATTERN
-            }
-            LogMessage("Weapon: Hemlok")
-        }
-    } else if (check_point_color == ENERGY_WEAPON_COLOR) {
-        if (CheckWeapon(VOLT_PIXELS)) {
-            current_weapon_type := VOLT_WEAPON_TYPE
-            current_pattern := VOLT_PATTERN
-            LogMessage("Weapon: Volt")
-        } else if (CheckWeapon(DEVOTION_PIXELS)) {
-            current_weapon_type := DEVOTION_WEAPON_TYPE
-            current_pattern := DEVOTION_PATTERN
-            if (CheckTurbocharger(DEVOTION_TURBOCHARGER_PIXELS)) {
-                current_pattern := TURBODEVOTION_PATTERN
-                current_weapon_type := DEVOTION_TURBO_WEAPON_TYPE
-            }
-            LogMessage("Weapon: Devotion")
-        } else if (CheckWeapon(HAVOC_PIXELS)) {
-            current_weapon_type := HAVOC_WEAPON_TYPE
-            current_pattern := HAVOC_PATTERN
-            if (CheckTurbocharger(HAVOC_TURBOCHARGER_PIXELS)) {
-                current_weapon_type := HAVOC_TURBO_WEAPON_TYPE
-            }
-            LogMessage("Weapon: Havoc")
-        } else if (CheckWeapon(NEMESIS_PIXELS)) {
-            current_weapon_type := NEMESIS_WEAPON_TYPE
-            current_pattern := NEMESIS_PATTERN
-            if (IsNemesisFullCharge()) {
-                current_weapon_type := NEMESIS_CHARGED_WEAPON_TYPE
-                current_pattern := NEMESIS_CHARGED_PATTERN
-            }
-            LogMessage("Weapon: Nemesis")
-        } else if (CheckWeapon(LSTAR_PIXELS)) {
-            current_weapon_type := LSTAR_WEAPON_TYPE
-            current_pattern := LSTAR_PATTERN
-            LogMessage("Weapon: LSTAR")
-        }
-    } else if (check_point_color == SHOTGUN_WEAPON_COLOR) {
+    ; Check for special colors like Shotgun, Sniper, and Supply Drop
+    if (check_point_color == SHOTGUN_WEAPON_COLOR) {
         current_weapon_type := SHOTGUN_WEAPON_TYPE
-		current_pattern := DEFAULT_PATTERN
-        LogMessage("Weapon: SHOTGUN")
+        current_pattern := DEFAULT_PATTERN
+        LogMessage("Weapon: SHOTGUN", "info")
     } else if (check_point_color == SNIPER_WEAPON_COLOR) {
-		current_weapon_type := SNIPER_WEAPON_TYPE
-		current_pattern := DEFAULT_PATTERN
-		LogMessage("Weapon: Sniper")
+        current_weapon_type := SNIPER_WEAPON_TYPE
+        current_pattern := DEFAULT_PATTERN
+        LogMessage("Weapon: Sniper", "info")
     } else if (check_point_color == SUPPY_DROP_COLOR) {
         if (CheckWeapon(R99_PIXELS)) {
             current_weapon_type := R99_WEAPON_TYPE
             current_pattern := R99_PATTERN
-            LogMessage("Weapon: R99 from Supply Drop")
+            LogMessage("Weapon: R99 from Supply Drop", "info")
         } else if (CheckWeapon(DEVOTION_PIXELS)) {
             current_weapon_type := DEVOTION_WEAPON_TYPE
             current_pattern := DEVOTION_PATTERN
@@ -899,18 +919,17 @@ DetectAndSetWeapon() {
                 current_pattern := TURBODEVOTION_PATTERN
                 current_weapon_type := DEVOTION_TURBO_WEAPON_TYPE
             }
-            LogMessage("Weapon: Devotion from Supply Drop")
+            LogMessage("Weapon: Devotion from Supply Drop", "info")
+        } else {
+            current_weapon_type := DEFAULT_WEAPON_TYPE
+            current_pattern := DEFAULT_PATTERN
         }
-		else {
-			current_weapon_type := DEFAULT_WEAPON_TYPE
-			current_pattern := DEFAULT_PATTERN
-		}
     } else {
-		current_weapon_type := DEFAULT_WEAPON_TYPE
-		current_pattern := DEFAULT_PATTERN
-	}
+        current_weapon_type := DEFAULT_WEAPON_TYPE
+        current_pattern := DEFAULT_PATTERN
+    }
 
-    LogMessage(current_weapon_type)
+    LogMessage(current_weapon_type, "info")
 }
 
 MoveMouse() {
@@ -925,13 +944,20 @@ MoveMouse() {
     }
 	
 	; Check if current_pattern is empty
-    if (!current_pattern || current_pattern.Length() == 0) {
-        LogMessage("current_pattern is empty, exiting MoveMouse.")
-        return
-    }
+	if (!current_pattern || !IsObject(current_pattern) || current_pattern.Length() == 0) {
+		LogMessage("Invalid pattern detected, exiting MoveMouse.", "error")
+		return
+	}
+	
+	try {
+		auto_click_needed := IsAutoClickNeeded()
+	} catch {
+		LogMessage("Error in IsAutoClickNeeded", "error")
+		auto_click_needed := false  ; Set a fallback
+	}
 
     ; Check if single mode is active
-    if (is_single_mode == "1") {
+    if (is_single_mode == "1" && !auto_click_needed) {
         LogMessage("Single mode is active. Exiting.")
         return
     }
@@ -954,7 +980,7 @@ MoveMouse() {
         Sleep(400)
     }
 
-    ; Handle NEMESIS weapon behavior
+    ; Handle NEMESIS and RAMPAGE weapon charged behavior
     if (current_weapon_type == NEMESIS_WEAPON_TYPE || current_weapon_type == NEMESIS_CHARGED_WEAPON_TYPE) {
         LogMessage("Current weapon is NEMESIS. Checking charge status.")
         if (IsNemesisFullCharge()) {
@@ -965,6 +991,15 @@ MoveMouse() {
             current_weapon_type := NEMESIS_WEAPON_TYPE
             current_pattern := NEMESIS_PATTERN
             LogMessage("NEMESIS not fully charged. Using normal pattern.")
+        }
+    } else if (current_weapon_type == RAMPAGE_WEAPON_TYPE) {
+        LogMessage("Current weapon is RAMPAGE. Checking charge status.")
+        if (CheckRampageCharged()) {
+            current_pattern := RAMPAGEAMP_PATTERN
+            LogMessage("RAMPAGE fully charged. Using charged pattern.")
+        } else {
+            current_pattern := RAMPAGE_PATTERN
+            LogMessage("RAMPAGE not fully charged. Using normal pattern.")
         }
     }
 	
@@ -979,9 +1014,27 @@ MoveMouse() {
 			y := 0
 			interval := 20
 			
+			; Check if current_pattern is empty
+			if (!current_pattern || !IsObject(current_pattern) || current_pattern.Length() == 0) {
+				LogMessage("Invalid pattern detected, exiting MoveMouse.", "error")
+				return
+			}
+						
+			; Exit the loop if the left mouse button is no longer held
+			if (!GetKeyState("LButton", "P")) {
+				LogMessage("LButton released. Exiting loop.")
+				break
+			}
+			
 			; If within current pattern, get the compensation values
-			if (A_Index <= current_pattern.Length()) {
-				compensation := StrSplit(current_pattern[Min(A_Index, current_pattern.Length())], ",")
+			if (A_Index < current_pattern.Length()) {
+				; Ensure the current pattern index is valid
+				if (!IsSet(current_pattern[A_Index]) || current_pattern[A_Index] = "") {
+					LogMessage("Invalid or empty pattern at index " A_Index, "error")
+					return
+				}
+				
+				compensation := StrSplit(current_pattern[A_Index], ",")
 	 
 				; Log the full compensation array for debug
 				LogMessage("Compensation Array: " compensation)
@@ -999,9 +1052,19 @@ MoveMouse() {
 				LogMessage("Recoil compensation - X: " x ", Y: " y ", Interval: " interval)
 			}
 			
+			if (auto_click_needed) {
+				Click
+				rand := Random(1, 20)
+				interval := interval + rand
+			}
+			
 			; Apply the recoil compensation with DllCall to mouse_event
-			DllCall("mouse_event", "UInt", 0x01, "Int", Round(x * modifier), "Int", Round(y * modifier))
-			LogMessage("Mouse event called with X: " Round(x * modifier) ", Y: " Round(y * modifier))
+			try {
+				DllCall("mouse_event", "UInt", 0x01, "Int", Round(x * modifier), "Int", Round(y * modifier))
+				LogMessage("Mouse event called with X: " Round(x * modifier) ", Y: " Round(y * modifier))
+			} catch {
+				LogMessage("Error calling DllCall for mouse_event", "error")
+			}
 			
 			; Show tooltip if debug is enabled
 			if (debug == "1") {

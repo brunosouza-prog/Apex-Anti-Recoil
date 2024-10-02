@@ -57,6 +57,13 @@ After you run it once and it's all working as expected, make sure debug is disab
 - Added Devo and R99 to supply for the new season and updated the pattern
 - Moved UUID to settings.ini
 - Created a UUID function to help creating a new UUID and not use the python script
+- Auto Fire is back (use with caution, working with hemlock and r301)
+- Added charged up rampage logic
+- Fixed turbocharger devo logic
+- Fixed Hemlock/3030 logic
+- Improved E pick up was blocking the mouse
+- Fixed B (change weapon mode) logic
+- Fixed Sheila
 
 ## Previous Changes by Lew29
 
@@ -69,8 +76,6 @@ After you run it once and it's all working as expected, make sure debug is disab
 ## Todo
 
 - Improve recoil further
-- Bring back the rapid-fire feature and fix any issues with it
-- Fix Sheila
 - Add superglide macro (press and hold C with shift)
 - Add Gold Optics back
 

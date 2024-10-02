@@ -20,7 +20,7 @@ global error_level := "error"
 global trigger_only := "0"
 global trigger_button := "Capslock"
 global tempFilePath := A_ScriptDir "\debug_log.txt"
-global UUID := "811e155bf4114204ae515ff9174ec383"
+global UUID := GenerateUUID() ; Start with a random UUID
 
 ; Clear the debug log file at the start of the script
 if FileExist(tempFilePath) {
