@@ -8,7 +8,7 @@ DetectHiddenWindows On
 SetTitleMatchMode RegEx
 
 ; default variables
-global version := "2.0.0"
+global version := "3.0.0"
 global resolution := "1920x1080"
 global colorblind := "Normal"
 global sens := "5.0"

@@ -41,6 +41,7 @@ Below are the settings and their descriptions:
 - `debug`: Set to `1` to enable debug mode for troubleshooting, `0` to disable.
 - `error_level`: Set to `error` to save log error logs, `info` to save all the logs.
 - `UUID`: Your universally unique identifier.
+- `superglide`: If you want shift + c to trigger the superglide.
 
 ### [trigger settings]
 - `trigger_only`: Set to `1` if you want the script to only activate on trigger press, `0` for it to be always active.
@@ -72,11 +73,11 @@ After you run it once and it's all working as expected, make sure debug is disab
 - Fixed Alternator not having an `ALTERNATOR_PIXELS`
 - Renamed "Sella" to "Sheila" (not sure why it was like this anyway)
 - Removed Wingman
+- Add superglide macro (press and hold C with shift)
 
 ## Todo
 
 - Improve recoil further
-- Add superglide macro (press and hold C with shift)
 - Add Gold Optics back
 
 ## Special Thanks
