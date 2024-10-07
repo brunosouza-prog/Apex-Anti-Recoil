@@ -18,7 +18,7 @@ SendMode "Input"
 CoordMode "Pixel", "Screen"
 
 ; default variables
-global version := "1.0.0"
+global version := "2.0.0"
 global resolution := "1920x1080"
 global colorblind := "Normal"
 global sens := "5.0"
@@ -30,6 +30,7 @@ global error_level := "error"
 global trigger_only := "0"
 global trigger_button := "Capslock"
 global show_tooltip := "0"
+global superglide := "1"
 global tempFilePath := A_ScriptDir "\debug_log.txt"
 global hMod, hHook
 global UUID := GenerateUUID() ; Start with a random UUID
@@ -96,6 +97,7 @@ global current_weapon_type := DEFAULT_WEAPON_TYPE
 global current_weapon_num := 0
 global peackkeeper_lock := false
 global is_single_mode := false
+global auto_click_needed := false
 
 ; Declare global variables without loading the patterns
 global R301_PATTERN, R99_PATTERN, P2020_PATTERN, RE45_PATTERN, G7_PATTERN, SPITFIRE_PATTERN, ALTERNATOR_PATTERN
@@ -180,31 +182,36 @@ HideProcess()
 ~$*1::
 ~$*2::
 ~$*R::
+{
     Sleep(100)
     DetectAndSetWeapon()
-return
+}
 
 ~$*B Up::
+{
     Sleep(1000)
     DetectAndSetWeapon()
-return
+}
 
 ~$*3::
+{
     Reset()
-return
+}
 
 ~$*G Up::
+{
     Reset()
-return
+}
 
 ~$*Z::
+{
     Sleep(600) ; @TODO Make sure Shiela ult is working properly
     if IsShiela() {
         SetShiela()
     } else {
         Reset()
     }
-return
+}
 
 ~End::
 	ExitSub()
@@ -217,6 +224,19 @@ return
     } catch {
         LogMessage("Error occurred during LButton hotkey handler.", "error")
     }
+}
+
+~$+C::
+{
+    if (IsMouseShown() || superglide == "0") {
+        Send("{Blind}{c down}")
+        return
+    }
+    Send("{Space}")
+    Sleep(1)
+    Send("{Control down}")
+    KeyWait("c")
+    Send("{Control up}")
 }
 
 RunAsAdmin() {
@@ -252,7 +272,7 @@ GenerateUUID() {
 }
 
 ReadIni() {
-    global resolution, colorblind, zoom_sens, sens, auto_fire, ads_only, debug, error_level, trigger_only, trigger_button, version, UUID ; Make sure it's visible
+    global resolution, colorblind, zoom_sens, sens, auto_fire, ads_only, debug, error_level, trigger_only, trigger_button, version, UUID, superglide ; Make sure it's visible
     
     iniFilePath := A_ScriptDir "\settings.ini"
     
@@ -269,6 +289,7 @@ ReadIni() {
         IniWrite("0", iniFilePath, "other settings", "debug")
         IniWrite("error", iniFilePath, "other settings", "error_level")
         IniWrite(GenerateUUID(), iniFilePath, "other settings", "UUID")
+        IniWrite("0", iniFilePath, "other settings", superglide)
         IniWrite("0", iniFilePath, "trigger settings", "trigger_only")
         IniWrite("Capslock", iniFilePath, "trigger settings", "trigger_button")
         LogMessage("New settings.ini file created.")
@@ -281,6 +302,7 @@ ReadIni() {
         zoom_sens := ReadIniValue(iniFilePath, "mouse settings", "zoom_sens")
         sens := ReadIniValue(iniFilePath, "mouse settings", "sens")
         auto_fire := ReadIniValue(iniFilePath, "mouse settings", "auto_fire")
+        superglide := ReadIniValue(iniFilePath, "other settings", "superglide")
         ads_only := ReadIniValue(iniFilePath, "mouse settings", "ads_only")
         trigger_only := ReadIniValue(iniFilePath, "trigger settings", "trigger_only")
         trigger_button := ReadIniValue(iniFilePath, "trigger settings", "trigger_button")
@@ -293,6 +315,7 @@ ReadIni() {
 		LogMessage("debug=" debug)
         LogMessage("error_level=" error_level)
         LogMessage("UUID=" UUID)
+        LogMessage("superglide=" superglide)
         LogMessage("trigger_only=" trigger_only)
         LogMessage("trigger_button=" trigger_button)
     }
@@ -324,6 +347,7 @@ LoadWeaponPixels() {
 	global HEMLOK_PIXELS, LSTAR_PIXELS, HAVOC_TURBOCHARGER_PIXELS, DEVOTION_TURBOCHARGER_PIXELS
 	global NEMESIS_FULL_CHARGE_PIXELS, SINGLE_MODE_PIXELS, PEACEKEEPER_PIXELS, CHARGED_MODE_PIXELS
 	global WEAPON_1_PIXELS, WEAPON_2_PIXELS
+	
     LogMessage("Loading weapon pixels...")
 	
 	; x, y pos for weapon1 and weapon 2
@@ -454,7 +478,6 @@ HideProcess() {
     LogMessage("Process (" A_ScriptName ") hidden successfully.")
     MsgBox("v"version " - Process ('" A_ScriptName "') hidden! `nYour uuid is " UUID)
 }
-
 
 LoadPixel(name) {
     global resolution, version ; Make sure it's visible
@@ -597,7 +620,7 @@ LoadPattern(filename) {
 }
 
 Reset() {
-	global current_pattern, is_single_mode, peackkeeper_lock, current_weapon_type, current_weapon_num, current_pattern ; Make sure it's visible
+	global current_pattern, is_single_mode, peackkeeper_lock, current_weapon_type, current_weapon_num, current_pattern, auto_click_needed ; Make sure it's visible
 	global DEFAULT_WEAPON_TYPE, DEFAULT_PATTERN ; Make sure it's visible
 	
     is_single_mode := false
@@ -605,6 +628,7 @@ Reset() {
     current_weapon_type := DEFAULT_WEAPON_TYPE
     current_weapon_num := 0
 	current_pattern := DEFAULT_PATTERN
+	auto_click_needed := false
 }
 
 IsShiela() {
@@ -850,16 +874,17 @@ CheckWeapons(weapon_list) {
 
 IsAutoClickNeeded() {
     global auto_fire, current_weapon_type
+	global HEMLOK_WEAPON_TYPE, R301_WEAPON_TYPE
 	
     return ((auto_fire == "1") && (current_weapon_type == HEMLOK_WEAPON_TYPE || current_weapon_type == R301_WEAPON_TYPE))
 }
-	
+
 DetectAndSetWeapon() {
     global current_pattern, current_weapon_type, weapon_check_map
     global WEAPON_1_PIXELS, WEAPON_2_PIXELS
     global LIGHT_WEAPON_COLOR, HEAVY_WEAPON_COLOR, ENERGY_WEAPON_COLOR
     global SHOTGUN_WEAPON_COLOR, SNIPER_WEAPON_COLOR, SUPPY_DROP_COLOR
-	global is_single_mode
+	global is_single_mode, auto_click_needed
 
     LogMessage("DetectAndSetWeapon called")
 
@@ -867,6 +892,14 @@ DetectAndSetWeapon() {
 
     is_single_mode := CheckSingleMode()
     LogMessage("Single mode: " . is_single_mode, "info")
+	
+		
+	try {
+		auto_click_needed := IsAutoClickNeeded()
+	} catch {
+		LogMessage("Error in IsAutoClickNeeded", "error")
+		auto_click_needed := false  ; Set a fallback
+	}
 
     ; First, check which weapon is active
     weapon1_color := PixelGetColor(WEAPON_1_PIXELS[1], WEAPON_1_PIXELS[2])
@@ -888,7 +921,7 @@ DetectAndSetWeapon() {
             current_weapon_num := 2
             LogMessage("Weapon 2 is valid", "info")
         } else {
-            LogMessage("No valid weapon color found", "error")
+            LogMessage("No valid weapon color found Color 1:" weapon1_color " Color 2" weapon2_color, "error")
             return
         }
     }
@@ -933,7 +966,9 @@ DetectAndSetWeapon() {
 }
 
 MoveMouse() {
-	global debug, current_pattern, is_single_mode, ads_only, trigger_only ; Make sure it's visible
+	global debug, current_pattern, is_single_mode, ads_only, trigger_only, current_weapon_type, auto_click_needed ; Make sure it's visible
+	global DEFAULT_WEAPON_TYPE, SHOTGUN_WEAPON_TYPE, SNIPER_WEAPON_TYPE, NEMESIS_WEAPON_TYPE, NEMESIS_CHARGED_WEAPON_TYPE, RAMPAGE_WEAPON_TYPE
+	global NEMESIS_CHARGED_PATTERN, NEMESIS_PATTERN, RAMPAGEAMP_PATTERN, RAMPAGE_PATTERN
 	
     LogMessage("LButton pressed. Starting checks.")
 
@@ -945,15 +980,8 @@ MoveMouse() {
 	
 	; Check if current_pattern is empty
 	if (!current_pattern || !IsObject(current_pattern) || current_pattern.Length() == 0) {
-		LogMessage("Invalid pattern detected, exiting MoveMouse.", "error")
+		LogMessage("M1 Invalid pattern detected, weapon " current_weapon_type ", exiting MoveMouse.", "error")
 		return
-	}
-	
-	try {
-		auto_click_needed := IsAutoClickNeeded()
-	} catch {
-		LogMessage("Error in IsAutoClickNeeded", "error")
-		auto_click_needed := false  ; Set a fallback
 	}
 
     ; Check if single mode is active
@@ -1016,7 +1044,7 @@ MoveMouse() {
 			
 			; Check if current_pattern is empty
 			if (!current_pattern || !IsObject(current_pattern) || current_pattern.Length() == 0) {
-				LogMessage("Invalid pattern detected, exiting MoveMouse.", "error")
+				LogMessage("M2 Invalid pattern detected, weapon " current_weapon_type ", exiting MoveMouse.", "error")
 				return
 			}
 						
@@ -1045,9 +1073,15 @@ MoveMouse() {
 					return
 				}
 
-				x := compensation[1]
-				y := compensation[2]
-				interval := compensation[3]
+				try {
+					x := compensation[1]
+					y := compensation[2]
+					interval := compensation[3]
+				}
+				catch {
+					LogMessage("Error getting the compensation value", "error")
+					return
+				}
 
 				LogMessage("Recoil compensation - X: " x ", Y: " y ", Interval: " interval)
 			}
@@ -1064,6 +1098,7 @@ MoveMouse() {
 				LogMessage("Mouse event called with X: " Round(x * modifier) ", Y: " Round(y * modifier))
 			} catch {
 				LogMessage("Error calling DllCall for mouse_event", "error")
+				return
 			}
 			
 			; Show tooltip if debug is enabled

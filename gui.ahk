@@ -8,7 +8,7 @@ DetectHiddenWindows On
 SetTitleMatchMode RegEx
 
 ; default variables
-global version := "1.0.0"
+global version := "2.0.0"
 global resolution := "1920x1080"
 global colorblind := "Normal"
 global sens := "5.0"
@@ -19,6 +19,7 @@ global debug := "1"
 global error_level := "error"
 global trigger_only := "0"
 global trigger_button := "Capslock"
+global superglide := "1"
 global tempFilePath := A_ScriptDir "\debug_log.txt"
 global UUID := GenerateUUID() ; Start with a random UUID
 
@@ -66,10 +67,11 @@ MyGui.Add("Text", "x20 y160", "Mouse Sensitivity:")
 MySlider := MyGui.Add("Slider", "x150 y155 w200 range0-200 tickinterval1 vsens", slider_sen)
 MySlider.Value := slider_sen  ; Set the slider to reflect the current sensitivity value
 
-; Add toggle checkboxes (2 rows)
+; Add toggle checkboxes (3 rows)
 MyGui.SetFont("s10", "Verdana")
-MyGui.Add("CheckBox", "x20 y200 w190 h25 vauto_fire", "Auto Fire").Value := auto_fire
-MyGui.Add("CheckBox", "x220 y200 w190 h25 vads_only", "ADS Only").Value := ads_only
+MyGui.Add("CheckBox", "x20 y200 w105 h25 vauto_fire", "Auto Fire").Value := auto_fire
+MyGui.Add("CheckBox", "x125 y200 w105 h25 vads_only", "ADS Only").Value := ads_only
+MyGui.Add("CheckBox", "x230 y200 w115 h25 vsuperglide", "Superglide").Value := superglide
 
 ; Separate line for Debug checkbox
 MyGui.Add("CheckBox", "x20 y240 w100 h25 vdebug", "Debug").Value := debug
@@ -142,6 +144,7 @@ btSave() {
     IniWrite(Saved.debug, "settings.ini", "other settings", "debug")
     IniWrite(Saved.error_level, "settings.ini", "other settings", "error_level")
     IniWrite(UUID, "settings.ini", "other settings", "UUID")
+    IniWrite(Saved.superglide, "settings.ini", "other settings", "superglide")
 	
 	; Run KeySharp with apexmaster.ahk as a parameter
     keysharpPath := "Keysharp.exe" ; Adjust this path as needed
@@ -217,7 +220,7 @@ ActiveMonitorInfo(&X, &Y, &Width, &Height) {
 }
 
 ReadIni() {
-    global resolution, colorblind, zoom_sens, sens, auto_fire, ads_only, debug, error_level, trigger_only, trigger_button, version, UUID ; Make sure it's visible
+    global resolution, colorblind, zoom_sens, sens, auto_fire, ads_only, debug, error_level, trigger_only, trigger_button, version, UUID, superglide ; Make sure it's visible
     
     iniFilePath := A_ScriptDir "\settings.ini"
     
@@ -234,6 +237,7 @@ ReadIni() {
         IniWrite("0", iniFilePath, "other settings", "debug")
         IniWrite("error", iniFilePath, "other settings", "error_level")
         IniWrite(GenerateUUID(), iniFilePath, "other settings", "UUID")
+        IniWrite("0", iniFilePath, "other settings", superglide)
         IniWrite("0", iniFilePath, "trigger settings", "trigger_only")
         IniWrite("Capslock", iniFilePath, "trigger settings", "trigger_button")
         LogMessage("New settings.ini file created.")
@@ -247,6 +251,7 @@ ReadIni() {
         sens := ReadIniValue(iniFilePath, "mouse settings", "sens")
         auto_fire := ReadIniValue(iniFilePath, "mouse settings", "auto_fire")
         ads_only := ReadIniValue(iniFilePath, "mouse settings", "ads_only")
+        superglide := ReadIniValue(iniFilePath, "other settings", "superglide")
         trigger_only := ReadIniValue(iniFilePath, "trigger settings", "trigger_only")
         trigger_button := ReadIniValue(iniFilePath, "trigger settings", "trigger_button")
         LogMessage("resolution=" resolution)
@@ -258,6 +263,7 @@ ReadIni() {
 		LogMessage("debug=" debug)
         LogMessage("error_level=" error_level)
         LogMessage("UUID=" UUID)
+        LogMessage("superglide=" superglide)
         LogMessage("trigger_only=" trigger_only)
         LogMessage("trigger_button=" trigger_button)
     }
