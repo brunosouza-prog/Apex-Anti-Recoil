@@ -65,6 +65,7 @@ After you run it once and it's all working as expected, make sure debug is disab
 - Improved E pick up was blocking the mouse
 - Fixed B (change weapon mode) logic
 - Fixed Sheila
+- Improved recoil
 
 ## Previous Changes by Lew29
 
@@ -77,7 +78,6 @@ After you run it once and it's all working as expected, make sure debug is disab
 
 ## Todo
 
-- Improve recoil further
 - Add Gold Optics back
 
 ## Special Thanks
